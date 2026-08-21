@@ -1,0 +1,606 @@
+.announcement-board::before {
+  content: "担当と期限";
+  letter-spacing: 0.06em;
+}
+
+.announcement-rule {
+  margin: 0;
+  padding: 6px 12px;
+  border-top: 1px solid var(--hairline);
+  border-bottom: 1px solid var(--hairline);
+  color: var(--muted-ink);
+  background: var(--surface-quiet);
+  font-size: 9px;
+}
+
+.announcement-assignee {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  grid-column: 1 / -1;
+  color: var(--ink);
+  font-size: 9px;
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.announcement-assignee.is-missing { color: #d88f59; }
+.announcement-item.is-unassigned { box-shadow: inset 2px 0 0 #d88f59; }
+.announcement-list .announcement-item { min-width: 270px; }
+
+.announcement-tabs {
+  display: flex;
+  grid-column: 1 / -1;
+  gap: 5px;
+  padding: 7px 10px;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--hairline);
+  scrollbar-width: thin;
+}
+
+.announcement-tabs button {
+  flex: 0 0 auto;
+  min-height: 26px;
+  padding: 0 9px;
+  border: 1px solid var(--hairline);
+  border-radius: 999px;
+  color: var(--muted-ink);
+  background: transparent;
+  font: 700 10px "Noto Sans JP", sans-serif;
+}
+
+.announcement-tabs button.active {
+  border-color: #c7f36b;
+  color: #172019;
+  background: #c7f36b;
+}
+
+.announcement-empty {
+  display: flex;
+  align-items: center;
+  min-width: 270px;
+  padding: 14px 16px;
+  color: var(--muted-ink);
+  font-size: 11px;
+}
+
+.timeline-layout.is-monthly .calendar-month-row span {
+  border-right: 1px solid var(--grid-line);
+}
+
+.timeline-layout.is-monthly .calendar-days {
+  align-items: stretch;
+}
+
+.timeline-layout.is-monthly .month-week-label {
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  min-width: 0;
+  border-right: 1px dashed var(--grid-line);
+  color: var(--muted-ink);
+  font-size: 9px;
+}
+
+@media (max-width: 760px) {
+  .announcement-list .announcement-item { min-width: min(280px, 84vw); }
+}
+
+.sidebar-project-card::after,
+.bottom-insights .insight-card::before,
+.bottom-insights .cover-card::before {
+  content: "";
+  display: none;
+}
+
+.zero-start-copy::before {
+  content: "最初のタスクを追加して、進行を始めましょう";
+  color: var(--muted-ink);
+  font-family: "Noto Sans JP", sans-serif;
+  font-size: 10px;
+  letter-spacing: 0;
+}
+
+.project-settings-shortcuts {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 7px;
+  margin-top: 18px;
+}
+
+.project-settings-shortcuts button {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 5px 7px;
+  min-height: 54px;
+  padding: 9px;
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  background: var(--surface-quiet);
+  text-align: left;
+  cursor: pointer;
+}
+
+.project-settings-shortcuts button:hover { border-color: var(--signal); }
+.project-settings-shortcuts svg { color: var(--signal); }
+.project-settings-shortcuts span { font-size: 10px; font-weight: 700; }
+.project-settings-shortcuts small { grid-column: 2; color: var(--muted-ink); font-size: 8px; }
+
+.role-access-note {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  margin-top: 8px;
+  padding: 5px 8px;
+  border-left: 2px solid var(--signal);
+  color: var(--muted-ink);
+  background: var(--surface-quiet);
+  font-size: 10px;
+}
+
+.role-access-note b { color: var(--ink); font-size: 10px; }
+
+.inline-phase-name,
+.inline-task-name {
+  width: 100%;
+  min-width: 0;
+  padding: 1px 3px;
+  border: 1px solid transparent;
+  border-radius: 0;
+  color: inherit;
+  background: transparent;
+  font: inherit;
+  line-height: inherit;
+}
+
+.inline-phase-name { font-weight: 700; }
+.inline-task-name { font-weight: 700; }
+.inline-phase-name:not(:focus),
+.inline-task-name:not(:focus) { border-bottom-color: color-mix(in srgb, var(--muted-ink) 38%, transparent); }
+.inline-phase-name:hover,
+.inline-task-name:hover,
+.inline-phase-name:focus,
+.inline-task-name:focus {
+  border-color: var(--signal);
+  outline: none;
+  background: var(--surface-quiet);
+}
+
+.task-more-button {
+  display: inline-grid;
+  place-items: center;
+  width: 24px;
+  height: 24px;
+  border: 1px solid transparent;
+  color: var(--muted-ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.task-more-button:hover { border-color: var(--hairline); color: var(--ink); }
+
+.gantt-inline-name {
+  position: relative;
+  z-index: 4;
+  width: calc(100% - 12px);
+  height: 20px;
+  margin: 1px 6px;
+  padding: 1px 3px;
+  border: 1px solid var(--signal);
+  color: #1a252a;
+  background: rgba(255, 255, 255, .96);
+  font: 700 10px/1.2 "Noto Sans JP", sans-serif;
+  outline: none;
+}
+
+.phase-inline-actions {
+  display: inline-flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+.phase-inline-actions button {
+  display: grid;
+  place-items: center;
+  width: 22px;
+  height: 22px;
+  border: 1px solid transparent;
+  color: var(--muted-ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.phase-inline-actions button:hover { border-color: var(--hairline); color: var(--signal); }
+.phase-inline-actions .phase-delete-inline:hover { color: #f18a8a; }
+
+.phase-accordion-trigger,
+.task-accordion-trigger {
+  display: inline-grid;
+  place-items: center;
+  flex: 0 0 auto;
+  width: 20px;
+  height: 20px;
+  padding: 0;
+  border: 1px solid transparent;
+  color: var(--muted-ink);
+  background: transparent;
+  cursor: pointer;
+}
+
+.phase-accordion-trigger:hover,
+.task-accordion-trigger:hover { border-color: var(--hairline); color: var(--ink); }
+.phase-row.is-collapsed { background: color-mix(in srgb, var(--surface-quiet) 82%, var(--surface)); }
+.phase-row > div:not(.phase-inline-actions) { min-width: 0; flex: 1; }
+.phase-row .inline-phase-name { width: 100%; min-width: 0; flex: 1; font-size: 9px; letter-spacing: .04em; }
+.timeline-card .phase-row { gap: 5px; padding-right: 9px; padding-left: 9px; }
+.timeline-card .phase-row small { margin-left: 2px; }
+.timeline-card .phase-inline-actions { gap: 0; margin-left: 0; }
+.timeline-card .phase-inline-actions button { width: 19px; }
+.task-title strong { display: inline-flex; align-items: center; gap: 2px; }
+.task-accordion-trigger { width: 17px; height: 17px; margin-left: -2px; }
+
+.task-inline-quick-fields {
+  display: grid;
+  grid-template-columns: minmax(74px, 1fr) minmax(86px, 1fr);
+  gap: 4px;
+  min-width: 168px;
+}
+
+.task-inline-quick-fields select {
+  min-width: 0;
+  height: 24px;
+  padding: 0 20px 0 6px;
+  border: 1px solid var(--hairline);
+  color: var(--ink);
+  background: var(--surface-quiet);
+  font: 700 9px "Noto Sans JP", sans-serif;
+}
+
+.task-inline-quick-fields select:focus { border-color: var(--signal); outline: none; }
+
+/* 日付・担当・状態を独立した層へ置き、タスク名と重ねない。 */
+.timeline-card .task-row {
+  position: relative;
+  height: 82px;
+  align-items: flex-start;
+  padding-top: 9px;
+  padding-bottom: 0;
+}
+
+.timeline-card .gantt-task-lane { height: 82px; }
+.timeline-card .gantt-bar { top: 29px; }
+
+.timeline-card .task-title { padding-top: 1px; }
+.timeline-card .task-schedule { position: absolute; left: 32px; top: 32px; color: var(--muted-ink); font-size: 9px; line-height: 12px; white-space: nowrap; }
+.timeline-card .task-row.is-bulk-mode .task-schedule { left: 56px; }
+.timeline-card .task-schedule .subtask-count { margin-left: 5px; color: var(--muted-ink); font-style: normal; }
+
+.timeline-card .task-inline-quick-fields {
+  position: absolute;
+  left: 32px;
+  bottom: 5px;
+  min-width: 0;
+  width: calc(100% - 48px);
+  max-width: 254px;
+  grid-template-columns: minmax(118px, 1.45fr) minmax(76px, .85fr);
+}
+.timeline-card .task-row.is-bulk-mode .task-inline-quick-fields { left: 56px; }
+
+/* タスク欄は区切り線をドラッグして、読みやすい幅へ調整できる。 */
+.timeline-card .timeline-layout {
+  min-width: calc(var(--task-column-width) + var(--timeline-width));
+  grid-template-columns: var(--task-column-width) var(--timeline-width);
+  isolation: isolate;
+}
+
+/* 日程を下へ追っても、カレンダーとタスク列の文脈を画面内に残す。 */
+.timeline-card .timeline-scroll {
+  max-height: min(660px, 72vh);
+  overflow: auto;
+  overscroll-behavior: contain;
+  scroll-padding-bottom: 28px;
+  scrollbar-gutter: stable both-edges;
+}
+
+.timeline-card .timeline-scroll-end {
+  grid-column: 1 / -1;
+  min-height: 28px;
+  border-top: 1px solid var(--hairline);
+  background: var(--surface);
+}
+
+.timeline-card .task-column-header,
+.timeline-card .calendar-header {
+  position: sticky;
+  top: 0;
+  z-index: 12;
+  background: var(--surface);
+}
+
+.timeline-card .task-column-header {
+  z-index: 14;
+  box-shadow: 0 1px 0 var(--hairline);
+}
+
+.timeline-card .calendar-header {
+  box-shadow: 0 1px 0 var(--hairline);
+}
+
+.timeline-card .calendar-day {
+  width: var(--timeline-unit);
+  flex-basis: var(--timeline-unit);
+}
+
+.timeline-card {
+  position: relative;
+}
+
+.timeline-card > .task-column-resizer {
+  position: absolute;
+  z-index: 30;
+  left: calc(var(--task-column-width) - 5px);
+  top: 49px;
+  bottom: 0;
+  width: 10px;
+  cursor: col-resize;
+  touch-action: none;
+}
+
+.task-column-resizer::before {
+  content: "";
+  position: absolute;
+  left: 4px;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--hairline);
+}
+
+.task-column-resizer:hover::before,
+.task-column-resizer:active::before { background: var(--signal); }
+
+.task-column-resizer::after {
+  content: "⋮";
+  position: absolute;
+  left: -2px;
+  top: 50%;
+  display: grid;
+  place-items: center;
+  width: 12px;
+  height: 28px;
+  transform: translateY(-50%);
+  color: var(--muted-ink);
+  background: var(--surface);
+  font-size: 15px;
+  line-height: 1;
+}
+
+.task-column-resizer:hover::after,
+.task-column-resizer:active::after { color: var(--signal-ink); background: var(--signal); }
+
+.phase-inline-actions .phase-add-task-button {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  width: auto;
+  padding: 0 3px;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.timeline-card .phase-inline-actions .phase-add-task-button {
+  width: auto;
+  min-width: 42px;
+  padding: 0 4px;
+}
+
+.calendar-day.week-label { font-size: 10px; }
+.calendar-day.week-label b { font-size: 10px; }
+.calendar-day.week-label small { font-size: 8px; }
+
+@media (max-width: 520px) {
+  .project-settings-shortcuts { grid-template-columns: 1fr; }
+  .timeline-card .task-inline-quick-fields { width: 168px; }
+  .timeline-card > .task-column-resizer { display: none; }
+  .timeline-card .timeline-scroll { max-height: 560px; }
+}
+
+.inline-important-button.active {
+  color: var(--important-task-text);
+  background: var(--important-task);
+  box-shadow: 0 0 0 1px var(--important-task-line);
+}
+
+.task-row.is-important {
+  box-shadow: inset 3px 0 0 var(--important-task);
+  background-image: linear-gradient(90deg, var(--important-row), transparent 58%);
+}
+
+.gantt-bar.is-important {
+  color: var(--important-task-text) !important;
+  background: var(--important-task) !important;
+  box-shadow: 0 0 0 1px var(--important-task-line), 0 6px 16px var(--important-row) !important;
+}
+
+.gantt-bar.is-important .resize-handle::after { background: rgba(255, 255, 255, .75); }
+
+.important-date-marker {
+  z-index: 7;
+  width: 3px;
+  border-left: 0;
+  background: var(--important-date);
+  box-shadow: 0 0 0 1px var(--important-date-label-line), 0 0 14px var(--important-row);
+}
+
+.important-date-marker span {
+  left: 7px;
+  padding: 4px 6px;
+  border: 1px solid var(--important-date-label-line);
+  color: var(--important-date-label-text);
+  background: var(--important-date-label-bg);
+  box-shadow: 0 3px 9px var(--important-row);
+}
+
+.pdf-track i.is-important { background: #b42328 !important; }
+.pdf-important-dates { margin: 9px 0 0; color: #a62828; font-size: 9px; font-weight: 700; }
+
+/* 初回利用時に迷わないよう、色は危険・確認・完了・進行だけへ固定する。 */
+:root {
+  --signal: #3976c7;
+  --signal-ink: #ffffff;
+  --pre: #a4afb5;
+  --production: #a4afb5;
+  --post: #a4afb5;
+  --state-progress: #075fc7;
+  --state-review: #a85a00;
+  --state-done: #076b50;
+  --state-danger: #c9232d;
+}
+
+.status-active, .status-revision { color: var(--state-progress); background: color-mix(in srgb, var(--state-progress) 12%, transparent); }
+.status-review { color: var(--state-review); background: color-mix(in srgb, var(--state-review) 14%, transparent); }
+.status-done { color: var(--state-done); background: color-mix(in srgb, var(--state-done) 14%, transparent); }
+.legend-active { background: var(--state-progress); }.legend-review { background: var(--state-review); }.legend-done { background: var(--state-done); }
+.phase-index, .phase-index.phase-pre, .phase-index.phase-production, .phase-index.phase-post, .phase-index.phase-cyan, .phase-index.phase-rose, .phase-index.phase-slate { color: #7e8a91; }
+.phase-label-bar.phase-pre, .phase-label-bar.phase-production, .phase-label-bar.phase-post, .phase-label-bar.phase-cyan, .phase-label-bar.phase-rose, .phase-label-bar.phase-slate { background: #a4afb5; }
+.gantt-bar.phase-pre, .gantt-bar.phase-production, .gantt-bar.phase-post, .gantt-bar.phase-cyan, .gantt-bar.phase-rose, .gantt-bar.phase-slate { background: #a4afb5; }
+.announcement-assignee.is-missing { color: var(--state-danger); }.announcement-item.is-unassigned { box-shadow: inset 3px 0 0 var(--state-danger); }
+.announcement-tabs button.active { border-color: var(--ink); color: #fff; background: var(--ink); }
+
+/* 通常時はアラートを一行へ畳み、期限超過・期限接近・未担当だけ自動で展開する。 */
+.announcement-board { display: block; min-height: 0; }
+.announcement-summary { width: 100%; min-height: 48px; display: flex; align-items: center; gap: 9px; padding: 9px 13px; color: var(--ink); background: var(--surface); cursor: pointer; text-align: left; }
+.announcement-summary > div { display: grid; gap: 1px; min-width: 0; }.announcement-summary span { color: var(--muted-ink); font-size: 9px; font-weight: 700; }.announcement-summary strong { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }.announcement-summary small { margin-left: auto; color: var(--muted-ink); font-size: 10px; }.announcement-summary > svg:last-child { color: var(--muted-ink); transition: transform .16s ease-out; }
+.announcement-board.is-expanded .announcement-summary > svg:last-child { transform: rotate(180deg); }
+.announcement-expanded { border-top: 1px solid var(--hairline); }
+
+/* 日常の操作列は検索・絞り込み・その他だけにし、補助操作は開いたときだけ表示する。 */
+.control-strip { flex-wrap: wrap; }.task-tools-panel { display: flex; flex: 1 0 100%; align-items: center; flex-wrap: wrap; gap: 7px; padding: 8px 0 0; border-top: 1px solid var(--hairline); }.utility-button.active { color: #fff; border-color: var(--ink); background: var(--ink); }
+@media (max-width: 660px) { .task-tools-panel { align-items: stretch; }.task-tools-panel .select-field, .task-tools-panel .utility-button { flex: 1 1 140px; }.announcement-summary { min-height: 52px; } }
+
+/* 状態色は工程ではなく、次に必要な判断を示す。 */
+.status-not-started { color: #33414a !important; border: 1px solid #8a979f; background: #edf1f3 !important; }
+.status-active, .status-revision { color: #064f9f !important; border: 1px solid #075fc7; background: #e6f0ff !important; }
+.status-review { color: #884800 !important; border: 1px solid #a85a00; background: #fff0dc !important; }
+.status-done { color: #07543f !important; border: 1px solid #076b50; background: #def7ec !important; }
+.status-active i, .status-revision i, .legend-active { background: var(--state-progress) !important; }.status-review i, .legend-review { background: var(--state-review) !important; }.status-done i, .legend-done { background: var(--state-done) !important; }.status-not-started i { background: #7d8a91 !important; }
+
+.gantt-bar.status-not-started { color: #1b2530; background: #a4afb5 !important; }.gantt-bar.status-active, .gantt-bar.status-revision { color: #fff; background: var(--state-progress) !important; }.gantt-bar.status-review { color: #fff; background: var(--state-review) !important; }.gantt-bar.status-done { color: #fff; background: var(--state-done) !important; }.gantt-bar.is-complete { opacity: 1; }.gantt-bar.is-important { color: #fff !important; background: var(--state-danger) !important; box-shadow: 0 0 0 1px #8b1118, 0 7px 16px rgba(201, 35, 45, .2) !important; }
+.gantt-bar.status-active::before, .gantt-bar.status-revision::before, .gantt-bar.status-review::before, .gantt-bar.status-done::before, .gantt-bar.is-important::before { background: rgba(255, 255, 255, .44); }.gantt-bar.status-active::after, .gantt-bar.status-revision::after, .gantt-bar.status-review::after, .gantt-bar.status-done::after, .gantt-bar.is-important::after { background: rgba(255, 255, 255, .36); }
+.unscheduled-gantt-card.status-not-started { border-color: #a4afb5; border-left-color: #7d8a91; }.unscheduled-gantt-card.status-active, .unscheduled-gantt-card.status-revision { border-color: color-mix(in srgb, var(--state-progress) 58%, transparent); border-left-color: var(--state-progress); background: color-mix(in srgb, var(--state-progress) 9%, var(--surface)); }.unscheduled-gantt-card.status-review { border-color: color-mix(in srgb, var(--state-review) 58%, transparent); border-left-color: var(--state-review); background: color-mix(in srgb, var(--state-review) 9%, var(--surface)); }.unscheduled-gantt-card.status-done { border-color: color-mix(in srgb, var(--state-done) 58%, transparent); border-left-color: var(--state-done); background: color-mix(in srgb, var(--state-done) 9%, var(--surface)); }.unscheduled-gantt-card.is-important { border-color: rgba(201, 35, 45, .65); border-left-color: var(--state-danger); background: rgba(201, 35, 45, .07); }
+
+.project-status-summary { display: flex; align-items: center; gap: 14px; margin: -8px 0 20px; padding: 10px 13px; border: 1px solid var(--hairline); background: var(--surface); }.project-status-summary > span { flex: 0 0 auto; color: var(--muted-ink); font: 700 9px "Space Grotesk", "Noto Sans JP", sans-serif; letter-spacing: .1em; }.project-status-summary > div { display: flex; flex: 1; align-items: center; gap: 0; }.status-summary-item { display: flex; align-items: baseline; gap: 4px; min-width: 0; padding: 0 14px; border-left: 1px solid var(--hairline); }.status-summary-item i { width: 8px; height: 8px; flex: 0 0 auto; border-radius: 50%; }.status-summary-item b { color: var(--muted-ink); font-size: 10px; white-space: nowrap; }.status-summary-item strong { color: var(--ink); font: 700 17px/1 "Space Grotesk", sans-serif; }.status-summary-item small { color: var(--muted-ink); font-size: 9px; }.status-summary-item.is-active i { background: var(--state-progress); }.status-summary-item.is-review i { background: var(--state-review); }.status-summary-item.is-done i { background: var(--state-done); }.status-summary-item.is-not-started i { background: #52616b; }.status-summary-item.is-active b { color: #064f9f; }.status-summary-item.is-review b { color: #884800; }.status-summary-item.is-done b { color: #07543f; }.status-summary-item.is-not-started b { color: #33414a; }
+
+.important-date-marker { z-index: 9; width: 6px; border: 0 !important; background: var(--state-danger) !important; box-shadow: 0 0 0 1px #8b1118, 0 0 16px rgba(201, 35, 45, .35) !important; }.important-date-marker span { left: 10px; display: inline-flex; align-items: center; gap: 5px; max-width: 176px; padding: 5px 8px; border: 1px solid #8b1118 !important; color: #fff !important; background: var(--state-danger) !important; box-shadow: 0 3px 10px rgba(201, 35, 45, .25) !important; font-size: 9px !important; }.important-date-marker svg { color: #fff !important; stroke-width: 3; }
+.pdf-track i.status-not-started { background: #a4afb5; }.pdf-track i.status-active, .pdf-track i.status-revision { background: var(--state-progress); }.pdf-track i.status-review { background: var(--state-review); }.pdf-track i.status-done { background: var(--state-done); }.pdf-track i.is-important { background: var(--state-danger) !important; }
+@media (max-width: 660px) { .project-status-summary { align-items: flex-start; flex-direction: column; gap: 8px; margin-bottom: 16px; }.project-status-summary > div { width: 100%; overflow-x: auto; }.status-summary-item { flex: 0 0 auto; padding: 0 10px; }.important-date-marker span { max-width: 124px; } }
+
+/* 担当変更は、誰に渡り、何をいつまでに進めるかをその場で知らせる。 */
+.handoff-attention { display: grid; grid-template-columns: auto minmax(0, 1fr) auto auto; align-items: center; gap: 10px; margin: -8px 0 18px; padding: 11px 13px; border-left: 4px solid var(--state-progress); color: var(--ink); background: color-mix(in srgb, var(--state-progress) 8%, var(--surface)); }.handoff-attention > svg { color: var(--state-progress); }.handoff-attention > div { min-width: 0; }.handoff-attention > div > span { display: block; color: var(--state-progress); font: 700 8px "Space Grotesk", "Noto Sans JP", sans-serif; letter-spacing: .1em; }.handoff-attention strong { display: block; margin-top: 2px; font-size: 12px; }.handoff-attention strong b { color: var(--state-progress); }.handoff-attention p { display: flex; flex-wrap: wrap; gap: 8px; margin: 4px 0 0; color: var(--muted-ink); font-size: 10px; }.handoff-attention p b { color: var(--ink); }.handoff-attention > button { display: inline-flex; align-items: center; gap: 3px; min-height: 28px; padding: 0 8px; border: 1px solid color-mix(in srgb, var(--state-progress) 42%, transparent); color: var(--state-progress); background: var(--surface); font-size: 10px; font-weight: 700; cursor: pointer; }.handoff-attention > button:hover { color: #fff; background: var(--state-progress); }.handoff-attention > .handoff-close { width: 26px; justify-content: center; padding: 0; border-color: transparent; color: var(--muted-ink); background: transparent; }.handoff-attention > .handoff-close:hover { color: var(--ink); background: transparent; }.handoff-attention.is-due { border-left-color: var(--state-review); background: color-mix(in srgb, var(--state-review) 9%, var(--surface)); }.handoff-attention.is-due > svg, .handoff-attention.is-due > div > span, .handoff-attention.is-due strong b, .handoff-attention.is-due > button { color: var(--state-review); }.handoff-attention.is-due > button { border-color: color-mix(in srgb, var(--state-review) 42%, transparent); }.handoff-attention.is-due > button:hover { color: #fff; background: var(--state-review); }.handoff-attention.is-overdue { border-left-color: var(--state-danger); background: color-mix(in srgb, var(--state-danger) 8%, var(--surface)); }.handoff-attention.is-overdue > svg, .handoff-attention.is-overdue > div > span, .handoff-attention.is-overdue strong b, .handoff-attention.is-overdue > button { color: var(--state-danger); }.handoff-attention.is-overdue > button { border-color: color-mix(in srgb, var(--state-danger) 42%, transparent); }.handoff-attention.is-overdue > button:hover { color: #fff; background: var(--state-danger); }
+@media (max-width: 660px) { .handoff-attention { grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; }.handoff-attention > button { grid-column: 2; justify-self: start; }.handoff-attention > .handoff-close { grid-column: 3; grid-row: 1; }.handoff-attention p { display: grid; gap: 2px; } }
+
+/* 日程を先へ送っても、工程の文脈を左に残す。 */
+.timeline-scroll { position: relative; }.timeline-layout > .task-column-header { position: sticky; left: 0; z-index: 14; background: var(--surface-quiet); box-shadow: 6px 0 10px rgba(20, 34, 40, .08); }.timeline-layout > .task-list { position: sticky; left: 0; z-index: 13; overflow: hidden; background: var(--surface); box-shadow: 6px 0 10px rgba(20, 34, 40, .08); }.timeline-layout > .task-column-resizer { position: absolute; z-index: 15; }
+
+/* 複数件を残し、受け手の確認まで追える担当引継ぎ。 */
+.handoff-queue { margin: 0 0 18px; border: 1px solid var(--hairline); background: var(--surface); box-shadow: var(--shadow); }.handoff-queue > header { display: flex; align-items: center; gap: 10px; min-height: 46px; padding: 0 15px; border-bottom: 1px solid var(--hairline); }.handoff-queue > header > span { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); font-size: 12px; font-weight: 800; }.handoff-queue > header > span svg { color: var(--state-progress); }.handoff-queue > header > strong { padding: 4px 7px; border-radius: 4px; color: #fff; background: var(--state-progress); font-size: 10px; }.handoff-queue > header > small { margin-left: auto; color: var(--muted-ink); font-size: 10px; }.handoff-queue > div { display: grid; grid-template-columns: repeat(auto-fit, minmax(215px, 1fr)); }.handoff-queue article { min-width: 0; display: flex; align-items: stretch; border-right: 1px solid var(--hairline); border-bottom: 2px solid var(--state-progress); }.handoff-queue article.is-due { border-bottom-color: var(--state-review); }.handoff-queue article.is-overdue { border-bottom-color: var(--state-danger); }.handoff-task { min-width: 0; flex: 1; display: grid; gap: 4px; padding: 11px 12px; color: var(--ink); background: transparent; text-align: left; cursor: pointer; }.handoff-task:hover { background: rgba(57, 118, 199, .06); }.handoff-task span { color: var(--state-progress); font-size: 10px; font-weight: 800; }.handoff-task b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }.handoff-task small { color: var(--muted-ink); font-size: 9px; line-height: 1.4; }.handoff-acknowledge { align-self: center; display: inline-flex; align-items: center; gap: 3px; margin: 0 9px 0 0; padding: 6px 7px; border: 1px solid var(--hairline); border-radius: 4px; color: var(--ink); background: var(--surface-quiet); font-size: 9px; font-weight: 800; cursor: pointer; }.handoff-acknowledge:hover { border-color: var(--state-done); color: var(--state-done); }.handoff-queue > p { margin: 0; padding: 9px 14px; color: var(--muted-ink); background: var(--surface-quiet); font-size: 10px; }
+@media (max-width: 660px) { .handoff-queue > header { flex-wrap: wrap; padding: 10px 12px; }.handoff-queue > header > small { width: 100%; margin-left: 0; }.handoff-queue > div { grid-template-columns: 1fr; }.handoff-queue article { border-right: 0; }.handoff-queue article:last-child { border-bottom: 0; }.handoff-task { padding: 11px; }.handoff-acknowledge { margin-right: 10px; } }
+
+/* 期限警告ではなく、担当者が先の準備まで確認するための未完了一覧。 */
+.assigned-tasks-board { margin: 0 0 18px; border: 1px solid var(--hairline); background: var(--surface); box-shadow: var(--shadow); }.assigned-tasks-board > header { min-height: 52px; display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0 15px; border-bottom: 1px solid var(--hairline); }.assigned-tasks-board > header > div { display: grid; gap: 2px; }.assigned-tasks-board > header span { display: inline-flex; align-items: center; gap: 7px; color: var(--ink); font-size: 12px; font-weight: 800; }.assigned-tasks-board > header span svg { color: var(--state-progress); }.assigned-tasks-board > header strong { color: var(--muted-ink); font-size: 10px; }.assigned-tasks-board > header select { min-width: 145px; padding: 7px 24px 7px 9px; border: 1px solid var(--hairline); border-radius: 4px; color: var(--ink); background: var(--surface-quiet); font-size: 11px; font-weight: 700; }.assigned-tasks-board > nav { display: flex; gap: 3px; padding: 8px 12px; border-bottom: 1px solid var(--hairline); background: var(--surface-quiet); }.assigned-tasks-board > nav button { padding: 5px 8px; border-radius: 4px; color: var(--muted-ink); background: transparent; font-size: 10px; font-weight: 800; cursor: pointer; }.assigned-tasks-board > nav button.active { color: #fff; background: var(--state-progress); }.assigned-task-list { display: grid; grid-template-columns: repeat(auto-fit, minmax(210px, 1fr)); }.assigned-task-list > button { min-width: 0; display: grid; grid-template-columns: auto 1fr auto; gap: 4px 8px; align-items: center; padding: 11px 12px; border-right: 1px solid var(--hairline); border-bottom: 1px solid var(--hairline); color: var(--ink); background: transparent; text-align: left; cursor: pointer; }.assigned-task-list > button:hover { background: rgba(57, 118, 199, .06); }.assigned-task-list > button > span { grid-column: 1 / -1; color: var(--muted-ink); font-size: 9px; font-weight: 800; letter-spacing: .04em; }.assigned-task-list > button > b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 12px; }.assigned-task-list > button > small { justify-self: end; padding: 3px 5px; border-radius: 3px; font-size: 9px; font-weight: 800; }.assigned-task-list > button > time { grid-column: 1 / 3; color: var(--muted-ink); font-size: 9px; }.assigned-task-list > button > svg { grid-column: 3; grid-row: 2 / 4; color: var(--muted-ink); }.assigned-task-list > p { grid-column: 1 / -1; margin: 0; padding: 15px; color: var(--muted-ink); font-size: 11px; }.assigned-tasks-board > footer { padding: 9px 13px; color: var(--muted-ink); background: var(--surface-quiet); font-size: 10px; }
+@media (max-width: 660px) { .assigned-tasks-board > header { align-items: flex-start; flex-direction: column; padding: 11px 12px; }.assigned-tasks-board > header select { width: 100%; }.assigned-tasks-board > nav { overflow-x: auto; }.assigned-tasks-board > nav button { flex: 0 0 auto; }.assigned-task-list { grid-template-columns: 1fr; }.assigned-task-list > button { border-right: 0; } }
+
+/* 作業中はタスク名を優先し、短いバーだけ中央の状態テキストへ切り替える。 */
+.gantt-bar { container-type: inline-size; overflow: visible; }.gantt-bar > .gantt-bar-content { position: relative !important; z-index: 6 !important; display: flex !important; align-items: center; gap: 6px; width: 100%; min-width: 0; padding: 0 !important; color: inherit; font: 700 10px/1 "Noto Sans JP", sans-serif !important; letter-spacing: 0 !important; }.gantt-bar-task-name { min-width: 0; overflow: hidden; color: inherit; text-overflow: ellipsis; white-space: nowrap; font-weight: 700; }.gantt-bar-status-label { display: inline-flex; flex: 0 0 auto; align-items: center; margin-left: auto; padding: 4px 7px; border: 0; color: #17212b !important; background: #fff; box-shadow: 0 1px 2px rgba(8,18,24,.24); font: 800 11px/1 "Noto Sans JP", sans-serif; letter-spacing: 0; white-space: nowrap; }.status-not-started .gantt-bar-status-label { color: #17212b !important; background: #fff; }.gantt-status-short { display: none; }.gantt-bar.is-important .gantt-bar-status-label { color: #8b1118 !important; background: #fff; }
+ .gantt-bar.status-active .gantt-bar-task-name, .gantt-bar.status-revision .gantt-bar-task-name { font-size: 11px; }.gantt-bar.status-active .gantt-bar-status-label, .gantt-bar.status-revision .gantt-bar-status-label { display: none; }
+.gantt-bar.is-compact-bar .gantt-bar-task-name { display: none; }.gantt-bar.is-compact-bar > .gantt-bar-content { justify-content: center; }.gantt-bar.is-compact-bar .gantt-bar-status-label, .gantt-bar.is-compact-bar.status-active .gantt-bar-status-label, .gantt-bar.is-compact-bar.status-revision .gantt-bar-status-label { display: inline-flex; margin-left: 0; padding: 0; color: inherit !important; background: transparent !important; box-shadow: none; }.gantt-bar.is-compact-bar.status-not-started, .gantt-bar.is-compact-bar.status-active, .gantt-bar.is-compact-bar.status-revision, .gantt-bar.is-compact-bar.status-review, .gantt-bar.is-compact-bar.status-done { background: var(--surface) !important; box-shadow: inset 0 0 0 1px currentColor !important; }.gantt-bar.is-compact-bar.status-not-started { color: #5f6c73; }.gantt-bar.is-compact-bar.status-active, .gantt-bar.is-compact-bar.status-revision { color: var(--state-progress); }.gantt-bar.is-compact-bar.status-review { color: var(--state-review); }.gantt-bar.is-compact-bar.status-done { color: var(--state-done); }.gantt-bar.is-compact-bar.status-not-started::before, .gantt-bar.is-compact-bar.status-active::before, .gantt-bar.is-compact-bar.status-revision::before, .gantt-bar.is-compact-bar.status-review::before, .gantt-bar.is-compact-bar.status-done::before, .gantt-bar.is-compact-bar.status-not-started::after, .gantt-bar.is-compact-bar.status-active::after, .gantt-bar.is-compact-bar.status-revision::after, .gantt-bar.is-compact-bar.status-review::after, .gantt-bar.is-compact-bar.status-done::after { background: currentColor; opacity: .28; }
+.gantt-bar.is-tiny-bar .gantt-bar-status-label { padding: 3px 4px; font-size: 10px; }.gantt-bar.is-tiny-bar .gantt-status-full { display: none; }.gantt-bar.is-tiny-bar .gantt-status-short { display: inline; }
+
+/* バー内の情報は色面に沈めず、白地・濃文字・状態色の左線で判読する。 */
+.gantt-bar { clip-path: none !important; border: 1.5px solid #52616b; border-radius: 3px !important; color: #17212b !important; background: #fff !important; box-shadow: 0 2px 5px rgba(18, 30, 37, .14) !important; }
+.gantt-bar.status-active, .gantt-bar.status-revision { border-color: var(--state-progress); }.gantt-bar.status-review { border-color: var(--state-review); }.gantt-bar.status-done { border-color: var(--state-done); }.gantt-bar.is-important { border-color: var(--state-danger) !important; background: #fff !important; box-shadow: 0 2px 5px rgba(18, 30, 37, .14) !important; }
+.gantt-bar::before, .gantt-bar.status-active::before, .gantt-bar.status-revision::before, .gantt-bar.status-review::before, .gantt-bar.status-done::before, .gantt-bar.is-important::before { left: 0; top: 0; width: 5px; height: 100%; background: #52616b; opacity: 1; }.gantt-bar.status-active::before, .gantt-bar.status-revision::before { background: var(--state-progress); }.gantt-bar.status-review::before { background: var(--state-review); }.gantt-bar.status-done::before { background: var(--state-done); }.gantt-bar.is-important::before { background: var(--state-danger); }
+.gantt-bar::after, .gantt-bar.status-active::after, .gantt-bar.status-revision::after, .gantt-bar.status-review::after, .gantt-bar.status-done::after, .gantt-bar.is-important::after { display: none; }
+.gantt-bar > .gantt-bar-content { padding: 0 9px 0 13px !important; color: #17212b !important; }.gantt-bar-task-name { color: #17212b !important; font-size: 11px; font-weight: 800; text-shadow: none; }.gantt-bar .gantt-bar-status-label { color: #17212b !important; background: transparent !important; box-shadow: none; }.gantt-bar.is-compact-bar .gantt-bar-status-label { color: currentColor !important; font-size: 11px; font-weight: 900; }.gantt-bar.is-compact-bar.status-active, .gantt-bar.is-compact-bar.status-revision { color: var(--state-progress) !important; }.gantt-bar.is-compact-bar.status-review { color: var(--state-review) !important; }.gantt-bar.is-compact-bar.status-done { color: var(--state-done) !important; }.gantt-bar.is-compact-bar.status-not-started { color: #33414a !important; }
+.resize-handle:hover, .resize-handle:focus-visible { background: rgba(23, 33, 43, .08) !important; }
+
+/* タスク行から迷わず日程編集へ入り、詳細画面では最初に開始・終了日を扱う。 */
+.task-schedule-button { display: inline-flex; align-items: center; gap: 3px; min-height: 26px; padding: 0 6px; border: 1px solid #9aaab5; color: #24445c; background: #fff; font-size: 9px; font-weight: 800; cursor: pointer; }.task-schedule-button:hover { border-color: var(--state-progress); color: #fff; background: var(--state-progress); }
+.task-more-button { width: auto !important; min-width: 34px; display: inline-flex !important; align-items: center; gap: 3px; padding: 0 6px !important; border: 1px solid #9aaab5 !important; color: #24445c !important; background: #fff !important; }.task-more-button::after { content: "日程・詳細"; font-size: 9px; font-weight: 800; white-space: nowrap; }.task-more-button:hover { border-color: var(--state-progress) !important; color: #fff !important; background: var(--state-progress) !important; }
+.inspector-schedule-block { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 12px; margin: 0 0 18px; padding: 14px; border: 1px solid #a9c6e7; background: #edf5ff; }.inspector-schedule-block > div:first-child { min-width: 0; display: grid; gap: 3px; }.inspector-schedule-block > div:first-child span { color: #064f9f; font: 800 9px "Space Grotesk", "Noto Sans JP", sans-serif; letter-spacing: .09em; }.inspector-schedule-block > div:first-child strong { overflow: hidden; color: #17212b; text-overflow: ellipsis; white-space: nowrap; font-size: 13px; }.inspector-schedule-block .unscheduled-toggle { align-self: start; display: inline-flex; gap: 5px; color: #24445c; font-size: 10px; white-space: nowrap; }.inspector-schedule-block .date-pair { grid-column: 1 / -1; }.inspector-schedule-block input[type="date"] { border-color: #8eb6df; background: #fff; }
+.inspector-fields > .unscheduled-toggle, .inspector-fields > .date-pair { display: none; }
+
+/* 状態色はバー全体だけに使い、文字は白地ラベルで常に判読させる。 */
+.gantt-bar { color: #fff !important; background: #56636d !important; border-color: #56636d !important; box-shadow: 0 2px 5px rgba(18, 30, 37, .16) !important; }.gantt-bar.status-active, .gantt-bar.status-revision { background: var(--state-progress) !important; border-color: var(--state-progress) !important; }.gantt-bar.status-review { background: var(--state-review) !important; border-color: var(--state-review) !important; }.gantt-bar.status-done { background: var(--state-done) !important; border-color: var(--state-done) !important; }.gantt-bar.is-important { background: var(--state-danger) !important; border-color: var(--state-danger) !important; }.gantt-bar.is-complete { opacity: 1 !important; }
+.gantt-bar::before, .gantt-bar::after, .gantt-bar.status-active::before, .gantt-bar.status-review::before, .gantt-bar.status-done::before, .gantt-bar.is-important::before { display: none !important; }.gantt-bar > .gantt-bar-content { display: inline-flex; align-items: center; max-width: calc(100% - 10px); min-height: 17px; padding: 1px 7px !important; color: #17212b !important; background: rgba(255, 255, 255, .98) !important; box-shadow: 0 1px 2px rgba(18, 30, 37, .16); }.gantt-bar-task-name { color: #17212b !important; font-size: 10px; font-weight: 900; }.gantt-bar .gantt-bar-status-label { color: #17212b !important; background: transparent !important; }.gantt-bar.is-compact-bar .gantt-bar-status-label { color: #17212b !important; font-size: 10px; font-weight: 900; }
+.dependency-cue, .gantt-bar .dependency-cue, .gantt-bar > em, .parent-progress, .parent-progress-fill, .pdf-progress { display: none !important; }
+.unscheduled-gantt-card { color: #fff !important; background: #56636d !important; border-color: #56636d !important; }.unscheduled-gantt-card.status-active, .unscheduled-gantt-card.status-revision { background: var(--state-progress) !important; border-color: var(--state-progress) !important; }.unscheduled-gantt-card.status-review { background: var(--state-review) !important; border-color: var(--state-review) !important; }.unscheduled-gantt-card.status-done { background: var(--state-done) !important; border-color: var(--state-done) !important; }.unscheduled-gantt-card.is-important { background: var(--state-danger) !important; border-color: var(--state-danger) !important; }
+.task-row.has-subtasks .status-pill {
+  display: inline-flex;
+  font-size: 0;
+}
+
+.task-row.has-subtasks .status-pill::after {
+  font: 800 10px/1 var(--font-sans);
+}
+
+.task-row.has-subtasks .status-pill.status-active::after { content: "進行中"; }
+.task-row.has-subtasks .status-pill.status-revision::after { content: "修正中"; }
+.task-row.has-subtasks .status-pill.status-review::after { content: "確認待ち"; }
+.task-row.has-subtasks .status-pill.status-done::after { content: "完了"; }
+.task-row.has-subtasks .status-pill.status-not-started::after { content: "未着手"; }
+
+/* 親タスクは背景色で特別扱いせず、状態バッジとガントバーだけで判断する。 */
+.timeline-card .task-row.has-subtasks,
+.timeline-card .task-row.has-subtasks.is-important {
+  background: var(--surface) !important;
+  background-image: none !important;
+  box-shadow: none;
+  border-left: 1px solid var(--grid-line);
+}
+
+.timeline-card .task-row.has-subtasks:hover,
+.timeline-card .task-row.has-subtasks.selected {
+  background: color-mix(in srgb, var(--signal) 8%, var(--surface)) !important;
+}
+
+/* 横移動後もカード基準で残る幅調整ハンドルと、担当者名を読める選択欄。 */
+.timeline-card { position: relative; }
+.timeline-card > .task-column-resizer {
+  position: absolute;
+  z-index: 30;
+  top: 49px;
+  bottom: 0;
+  left: calc(var(--task-column-width) - 5px);
+  width: 10px;
+}
+
+.timeline-card .task-inline-quick-fields {
+  width: calc(100% - 48px);
+  max-width: 254px;
+  grid-template-columns: minmax(118px, 1.45fr) minmax(76px, .85fr);
+}
+
+@media (max-width: 520px) {
+  .timeline-card > .task-column-resizer { display: none; }
+}
+
+/* ラベルは文字量だけを包み、状態色のバー面積を十分に残す。 */
+.gantt-bar > .gantt-bar-content { flex: 0 1 auto !important; width: auto !important; max-width: 72% !important; }.gantt-bar.is-compact-bar > .gantt-bar-content { max-width: 66% !important; margin: 0 auto; }.gantt-bar-task-name { max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* 状態色のバー面を隠さず、文字の背景だけを白くする。 */
+.gantt-bar > .gantt-bar-content { display: block !important; padding: 0 !important; background: transparent !important; box-shadow: none !important; }.gantt-bar .gantt-bar-task-name, .gantt-bar .gantt-bar-status-label { display: inline-flex; align-items: center; min-height: 17px; max-width: 100%; padding: 1px 7px; color: #17212b !important; background: #fff !important; box-shadow: 0 1px 2px rgba(18, 30, 37, .16); }.gantt-bar.is-compact-bar .gantt-bar-status-label { justify-content: center; }.gantt-bar.is-compact-bar .gantt-bar-task-name { display: none; }
+
+/* フェーズ帯は左サイドバーと同じ色・文字色に揃え、工程のまとまりを明確にする。 */
+.timeline-card .phase-row, .timeline-card .phase-row.is-collapsed { color: var(--sidebar-text); background: var(--sidebar-bg); border-bottom-color: rgba(255, 255, 255, .12); }
+.timeline-card .phase-row b, .timeline-card .phase-row .inline-phase-name, .timeline-card .phase-row small, .timeline-card .phase-row .phase-accordion-trigger { color: var(--sidebar-text); }
+.timeline-card .phase-row .phase-label-bar { background: rgba(255, 255, 255, .5) !important; }
+.timeline-card .phase-row .phase-inline-actions button { color: var(--sidebar-text); }.timeline-card .phase-row .phase-inline-actions button:hover, .timeline-card .phase-row .phase-accordion-trigger:hover { border-color: rgba(255, 255, 255, .28); color: #fff; }
+
+/* 色の意味を一つに固定する最終表示：バー面=状態、文字=白。 */
+.gantt-bar > .gantt-bar-content, .gantt-bar.is-compact-bar > .gantt-bar-content { display: flex !important; align-items: center; width: 100% !important; max-width: 100% !important; margin: 0 !important; padding: 0 10px !important; color: #fff !important; background: transparent !important; box-shadow: none !important; }.gantt-bar.is-compact-bar > .gantt-bar-content { justify-content: center; }.gantt-bar .gantt-bar-task-name, .gantt-bar .gantt-bar-status-label, .gantt-bar.is-compact-bar .gantt-bar-status-label { display: inline !important; min-height: 0; max-width: 100%; padding: 0; color: #fff !important; background: transparent !important; box-shadow: none !important; font-weight: 900; text-shadow: 0 1px 1px rgba(0, 0, 0, .32); }.gantt-bar.is-compact-bar .gantt-bar-task-name { display: none !important; }
+.gantt-bar.is-compact-bar.status-not-started { color: #fff !important; background: #56636d !important; box-shadow: 0 2px 5px rgba(18, 30, 37, .16) !important; }.gantt-bar.is-compact-bar.status-active, .gantt-bar.is-compact-bar.status-revision { color: #fff !important; background: var(--state-progress) !important; box-shadow: 0 2px 5px rgba(18, 30, 37, .16) !important; }.gantt-bar.is-compact-bar.status-review { color: #fff !important; background: var(--state-review) !important; box-shadow: 0 2px 5px rgba(18, 30, 37, .16) !important; }.gantt-bar.is-compact-bar.status-done { color: #fff !important; background: var(--state-done) !important; box-shadow: 0 2px 5px rgba(18, 30, 37, .16) !important; }.gantt-bar.is-compact-bar.is-important { color: #fff !important; background: var(--state-danger) !important; }
+
+/* タスク左端のグリップは、同一フェーズ内のドラッグ並び替え専用。 */
+.drag-handle { cursor: grab !important; touch-action: none; }.drag-handle:active { cursor: grabbing !important; }.task-row.is-dragging { opacity: .48; }.task-row:has(.drag-handle:hover) { background: #f5f9fc; }

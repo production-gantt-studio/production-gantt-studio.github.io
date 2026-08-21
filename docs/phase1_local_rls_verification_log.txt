@@ -1,0 +1,128 @@
+psql:/home/claude/phase1/local_verify/10_fixtures_and_tests.sql:10: ERROR:  duplicate key value violates unique constraint "users_pkey"
+DETAIL:  Key (id)=(11111111-1111-1111-1111-111111111111) already exists.
+INSERT 0 0
+psql:/home/claude/phase1/local_verify/10_fixtures_and_tests.sql:20: ERROR:  duplicate key value violates unique constraint "organizations_pkey"
+DETAIL:  Key (id)=(aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa) already exists.
+psql:/home/claude/phase1/local_verify/10_fixtures_and_tests.sql:23: ERROR:  duplicate key value violates unique constraint "organization_members_org_user_unique"
+DETAIL:  Key (organization_id, user_id)=(aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa, 11111111-1111-1111-1111-111111111111) already exists.
+psql:/home/claude/phase1/local_verify/10_fixtures_and_tests.sql:28: ERROR:  duplicate key value violates unique constraint "projects_pkey"
+DETAIL:  Key (id)=(bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb) already exists.
+psql:/home/claude/phase1/local_verify/10_fixtures_and_tests.sql:34: ERROR:  duplicate key value violates unique constraint "project_members_project_email_unique"
+DETAIL:  Key (project_id, invited_email)=(bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb, editor@example.com) already exists.
+=== TEST 1: anon cannot read projects (expect permission denied, not 0 rows) ===
+psql:/home/claude/phase1/local_verify/10_fixtures_and_tests.sql:44: NOTICE:  PASS: anon SELECT on projects raised insufficient_privilege as expected
+DO
+RESET
+=== TEST 2: anon cannot read project_members (expect permission denied) ===
+psql:/home/claude/phase1/local_verify/10_fixtures_and_tests.sql:55: NOTICE:  PASS: anon SELECT on project_members raised insufficient_privilege as expected
+DO
+RESET
+=== TEST 3: owner can read own project ===
+SET
+SET
+ result 
+--------
+ PASS
+(1 row)
+
+RESET
+=== TEST 4: owner can read full roster ===
+SET
+SET
+ result 
+--------
+ PASS
+(1 row)
+
+RESET
+=== TEST 5: invite_token_hash column is not readable by authenticated (expect permission denied) ===
+psql:/home/claude/phase1/local_verify/10_fixtures_and_tests.sql:81: NOTICE:  PASS: reading invite_token_hash raised insufficient_privilege as expected
+DO
+RESET
+=== TEST 6: active editor can read the project they were invited to ===
+SET
+SET
+ result 
+--------
+ PASS
+(1 row)
+
+RESET
+=== TEST 7: active editor can read the roster ===
+SET
+SET
+ result 
+--------
+ PASS
+(1 row)
+
+RESET
+=== TEST 8: outsider cannot read the project ===
+SET
+SET
+ result 
+--------
+ PASS
+(1 row)
+
+RESET
+=== TEST 9: outsider cannot read the roster ===
+SET
+SET
+ result 
+--------
+ PASS
+(1 row)
+
+RESET
+=== TEST 10: org owner cannot self-escalate via UPDATE (0 rows affected) ===
+SET
+SET
+UPDATE 0
+RESET
+ result 
+--------
+ PASS
+(1 row)
+
+=== TEST 11: authenticated cannot INSERT into projects directly ===
+SET
+SET
+psql:/home/claude/phase1/local_verify/10_fixtures_and_tests.sql:128: ERROR:  permission denied for table projects
+RESET
+=== TEST 12: another org owner (a fresh 4th user, no membership at all) cannot read organizations row ===
+SET
+SET
+ result 
+--------
+ PASS
+(1 row)
+
+RESET
+=== TEST 13: profiles - user cannot read a stranger's profile ===
+SET
+SET
+ result 
+--------
+ PASS
+(1 row)
+
+RESET
+=== TEST 14: profiles - user CAN read own profile ===
+SET
+SET
+ result 
+--------
+ PASS
+(1 row)
+
+RESET
+=== TEST 15: profiles - user cannot UPDATE their own role column (expect permission denied) ===
+psql:/home/claude/phase1/local_verify/10_fixtures_and_tests.sql:161: NOTICE:  PASS: updating profiles.role raised insufficient_privilege as expected
+DO
+RESET
+        result         
+-----------------------
+ PASS (role unchanged)
+(1 row)
+

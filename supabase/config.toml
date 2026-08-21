@@ -1,0 +1,21 @@
+# Phase 1 Supabase project configuration.
+# This file matters once a session is actually connected to the real
+# Supabase project (`supabase link`) and running `supabase functions deploy` /
+# `supabase db push` — Phase 1 itself does not connect or deploy anything.
+
+project_id = "production-gantt-studio"
+
+[functions.health]
+# The health-check scaffolding function verifies the caller's JWT itself
+# (see supabase/functions/health/index.ts), so platform-level JWT
+# verification can stay off for this one — Phase 2 business functions should
+# generally leave verify_jwt = true (the default) unless they have a specific
+# reason not to.
+verify_jwt = false
+
+# Required secrets (set via `supabase secrets set`, never committed):
+#   SUPABASE_SERVICE_ROLE_KEY  - service role key, Edge Function use only
+#   ALLOWED_ORIGINS            - comma-separated list, e.g.
+#                                "https://<production-url>,http://localhost:5173"
+# SUPABASE_URL and SUPABASE_ANON_KEY are provided automatically to every Edge
+# Function by the Supabase platform and do not need to be set manually.
