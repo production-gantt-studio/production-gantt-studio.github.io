@@ -1,10 +1,9 @@
-// create-invite: mirrors `projects.invite`. Editor-or-above only (owner or
-// active editor — requireProjectRole(..., "editor") already excludes plain
-// viewers, matching Section 3's "owner/active editor only" restriction),
-// recent-auth required. Issues an opaque token, stores only its SHA-256
-// hash, 7-day expiry, upserts by (project_id, invited_email) exactly like
-// the original (re-inviting the same email refreshes the pending invite
-// rather than creating a duplicate row).
+// create-invite: owner/editor only, recent-auth required. It issues an opaque
+// invite token (only a SHA-256 hash is stored) and a one-time Supabase Auth
+// token for the exact invited email. The returned link contains both tokens:
+// opening it verifies the Auth token, persists that email's session, then
+// consumes the invite token. This keeps the established exact-email check in
+// accept-invite while avoiding reliance on Supabase's shared outbound email.
 //
 // Manus/Gemini review fixes applied here:
 //   1. Invited role is EDITOR ONLY. Viewer accounts/invites/logins must never
@@ -38,6 +37,20 @@ import {
 import { createOpaqueToken, hashIpAddress, hashOpaqueToken } from "../_shared/tokens.ts";
 import { inviteInput, parseOrThrow } from "../_shared/validation.ts";
 
+function inviteBaseUrl(rawOrigin: string): string {
+  const url = new URL(rawOrigin);
+  const origin = url.origin;
+  const allowed = (Deno.env.get("ALLOWED_ORIGINS") ?? "")
+    .split(",")
+    .map((value) => value.trim())
+    .filter(Boolean);
+  if (!allowed.includes(origin)) throw new AppError(400, "招待リンクの発行元が許可されていません。");
+  if (url.pathname === "/" && origin === "https://rikufujita1229-sudo.github.io") {
+    url.pathname = "/production-gantt-studio/";
+  }
+  return url.toString().replace(/\/+$/, "") + "/";
+}
+
 Deno.serve((req) =>
   withHandler(req, { requireAuth: true }, async ({ user, body, ip }) => {
     if (!user) throw new AppError(401, "ログインしてください。");
@@ -66,6 +79,7 @@ Deno.serve((req) =>
 
     const supabase = createServiceRoleClient();
     const email = input.email.trim().toLowerCase();
+    const appBaseUrl = inviteBaseUrl(input.origin);
 
     // Provision the login account FIRST (see ensureAuthUserForEmail's own
     // comment for why this is required with shouldCreateUser:false). No
@@ -78,6 +92,17 @@ Deno.serve((req) =>
     const token = createOpaqueToken();
     const tokenHash = await hashOpaqueToken(token);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+    const invitePath = `/invite?token=${encodeURIComponent(token)}`;
+    const authRedirect = new URL("auth/confirm", appBaseUrl);
+    authRedirect.searchParams.set("next", invitePath);
+    const { data: authLink, error: authLinkError } = await supabase.auth.admin.generateLink({
+      type: "magiclink",
+      email,
+      options: { redirectTo: authRedirect.toString() },
+    });
+    if (authLinkError || !authLink.properties.hashed_token) {
+      throw new AppError(500, "招待用ログインリンクを作成できませんでした。");
+    }
 
     const { data: existing } = await supabase
       .from("project_members")
@@ -117,8 +142,10 @@ Deno.serve((req) =>
       ipHash: await hashIpAddress(ip),
     });
 
-    const url = new URL("/invite", input.origin);
-    url.searchParams.set("token", token);
-    return { inviteUrl: url.toString(), role: "editor" as const, invitedBy: access.accessRole, expiresAt: expiresAt.toISOString() };
+    const inviteUrl = new URL("auth/confirm", appBaseUrl);
+    inviteUrl.searchParams.set("token_hash", authLink.properties.hashed_token);
+    inviteUrl.searchParams.set("type", "magiclink");
+    inviteUrl.searchParams.set("next", invitePath);
+    return { inviteUrl: inviteUrl.toString(), role: "editor" as const, invitedBy: access.accessRole, expiresAt: expiresAt.toISOString() };
   })
 );
