@@ -47,7 +47,11 @@ function LoginOverlay() {
         email: trimmed,
         options: {
           shouldCreateUser: false,
-          emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL ?? "/"}auth/callback`.replace(/([^:])\/\//, "$1/"),
+          // The production email template sends its token_hash to
+          // /auth/confirm, where AuthConfirm explicitly calls verifyOtp().
+          // Using that dedicated route avoids relying on a PKCE code surviving
+          // mail scanners and a GitHub Pages SPA fallback round trip.
+          emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL ?? "/"}auth/confirm`.replace(/([^:])\/\//, "$1/"),
         },
       });
       if (error) {
