@@ -155,6 +155,12 @@ const sampleProjects: StoredProject[] = [
   },
 ];
 
+const sampleProjectFingerprints = sampleProjects.map(({ project }) => ({
+  title: project.title ?? "",
+  client: project.client ?? "",
+  taskCount: project.tasks?.length ?? 0,
+}));
+
 const projectTemplateOptions: Array<{ id: ProjectTemplateKind; title: string; description: string }> = [
   { id: "blank", title: "完全新規", description: "空の案件から、必要なタスクだけを追加します。" },
   { id: "video", title: "動画制作", description: "企画・撮影・編集・納品の基本工程を用意します。" },
@@ -216,7 +222,7 @@ function loadLegacyProjectsForMigration(): StoredProject[] {
   try {
     const stored = localStorage.getItem(PROJECTS_STORAGE_KEY);
     if (stored) {
-      return filterLegacyProjectCandidates<ProjectSnapshot>(JSON.parse(stored), sampleIds);
+      return filterLegacyProjectCandidates<ProjectSnapshot>(JSON.parse(stored), sampleIds, sampleProjectFingerprints);
     }
     const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
     if (legacy) {
@@ -224,6 +230,7 @@ function loadLegacyProjectsForMigration(): StoredProject[] {
       return filterLegacyProjectCandidates<ProjectSnapshot>(
         [{ id: "project-default", project, createdAt: project.updatedAt ?? new Date().toISOString() }],
         sampleIds,
+        sampleProjectFingerprints,
       );
     }
   } catch {
