@@ -17,6 +17,7 @@
 import { createElement, useState, type FormEvent } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { requireSupabaseClient } from "@/lib/supabaseClient";
+import { passkeyErrorMessage, signInWithPasskey } from "@/lib/passkeyAuth";
 
 const CONTAINER_ID = "supabase-login-overlay-root";
 let mountedRoot: Root | null = null;
@@ -71,6 +72,19 @@ function LoginOverlay() {
     }
   };
 
+  const onPasskeyLogin = async () => {
+    setStatus("sending");
+    setMessage("");
+    try {
+      await signInWithPasskey();
+      closeOverlay();
+      window.location.reload();
+    } catch (error) {
+      setStatus("error");
+      setMessage(passkeyErrorMessage(error));
+    }
+  };
+
   return createElement(
     "div",
     {
@@ -100,12 +114,23 @@ function LoginOverlay() {
           color: "#0f172a",
         },
       },
-      createElement("h2", { style: { margin: "0 0 8px", fontSize: 18 } }, "メールでログイン"),
+      createElement("h2", { style: { margin: "0 0 8px", fontSize: 18 } }, "ログイン"),
       createElement(
         "p",
         { style: { margin: "0 0 16px", fontSize: 13, color: "#475569", lineHeight: 1.5 } },
-        "登録・招待済みのメールアドレスを入力すると、ログイン用のリンクを送信します。",
+        "登録済みのPasskeyがある場合は、メールを待たずにログインできます。",
       ),
+      createElement(
+        "button",
+        {
+          type: "button",
+          onClick: onPasskeyLogin,
+          disabled: status === "sending",
+          style: { width: "100%", padding: "10px 12px", fontSize: 14, fontWeight: 600, borderRadius: 8, border: "1px solid #3976c7", background: "#eef5ff", color: "#235c9e", cursor: status === "sending" ? "wait" : "pointer", marginBottom: 12 },
+        },
+        status === "sending" ? "確認中" : "Passkeyでログイン",
+      ),
+      createElement("p", { style: { margin: "0 0 12px", fontSize: 12, color: "#64748b", lineHeight: 1.5 } }, "初めての端末では、管理者から届いた招待リンクで参加してください。"),
       createElement(
         "form",
         { onSubmit },
