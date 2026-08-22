@@ -72,6 +72,12 @@ verify_jwt = true
 [functions.create-forwarded-share-link]
 verify_jwt = false
 
+# Initial account provisioning is public only while zero admins exist. The
+# function validates the server-only ADMIN_BOOTSTRAP_EMAIL and refuses every
+# subsequent request once an admin profile exists.
+[functions.provision-initial-admin]
+verify_jwt = false
+
 # Required secrets (set via `supabase secrets set`, never committed):
 #   SUPABASE_SERVICE_ROLE_KEY  - service role key, Edge Function use only
 #   ALLOWED_ORIGINS            - comma-separated list, e.g.
