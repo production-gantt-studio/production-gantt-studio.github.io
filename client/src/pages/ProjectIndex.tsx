@@ -9,6 +9,7 @@ import { trpc } from "@/lib/trpc";
 import { startLogin } from "@/const";
 import { cloneTemplateTasks } from "@/lib/projectCreationTemplate";
 import { isObsoleteQuickSample, normalizeSampleProjectIdentity } from "@/lib/sampleProjectIdentity";
+import { filterLegacyProjectCandidates } from "@/lib/legacyProjectMigration";
 import { useLocation } from "wouter";
 
 const LEGACY_STORAGE_KEY = "production-gantt-studio-v1";
@@ -210,6 +211,27 @@ function loadProjects(): StoredProject[] {
   return ensureSampleProjects([]);
 }
 
+function loadLegacyProjectsForMigration(): StoredProject[] {
+  const sampleIds = sampleProjects.map((item) => item.id);
+  try {
+    const stored = localStorage.getItem(PROJECTS_STORAGE_KEY);
+    if (stored) {
+      return filterLegacyProjectCandidates<ProjectSnapshot>(JSON.parse(stored), sampleIds);
+    }
+    const legacy = localStorage.getItem(LEGACY_STORAGE_KEY);
+    if (legacy) {
+      const project = JSON.parse(legacy) as ProjectSnapshot;
+      return filterLegacyProjectCandidates<ProjectSnapshot>(
+        [{ id: "project-default", project, createdAt: project.updatedAt ?? new Date().toISOString() }],
+        sampleIds,
+      );
+    }
+  } catch {
+    // Keep the public Sample view usable when old browser storage is malformed.
+  }
+  return [];
+}
+
 function loadArchive(): ArchivedProject[] {
   try {
     const stored = localStorage.getItem(ARCHIVE_STORAGE_KEY);
@@ -283,7 +305,8 @@ export default function ProjectIndex() {
   const [draftClient, setDraftClient] = useState("");
   const [draftEventMonth, setDraftEventMonth] = useState("");
   const [selectedTemplate, setSelectedTemplate] = useState<ProjectTemplateKind>("blank");
-  const migrationStartedRef = useRef(false);
+  const [legacyProjects, setLegacyProjects] = useState<StoredProject[]>(loadLegacyProjectsForMigration);
+  const [legacyMigrationStatus, setLegacyMigrationStatus] = useState<"idle" | "saving" | "error">("idle");
   const remoteSampleMigrationIdsRef = useRef(new Set<string>());
 
   useEffect(() => {
@@ -346,11 +369,27 @@ export default function ProjectIndex() {
       remoteSampleMigrationIdsRef.current.clear();
     });
   }, [isAuthenticated, user?.role, remoteProjectsQuery.data, updateRemoteProject, deleteRemoteProject, remoteProjectsQuery]);
-  useEffect(() => {
-    if (!isAuthenticated || user?.role !== "admin" || !remoteProjectsQuery.data || remoteProjectsQuery.data.length > 0 || !projects.length || migrationStartedRef.current) return;
-    migrationStartedRef.current = true;
-    Promise.all(projects.map((item) => createRemoteProject.mutateAsync({ title: item.project.title || "名称未設定", client: item.project.client || null, eventMonth: item.project.eventMonth || null, data: JSON.stringify(item.project) }))).then(() => remoteProjectsQuery.refetch()).catch(() => { migrationStartedRef.current = false; window.alert("既存案件の移行に失敗しました。もう一度ログインし直してください。"); });
-  }, [isAuthenticated, user?.role, remoteProjectsQuery.data, projects, createRemoteProject]);
+  const migrateLegacyProjects = async () => {
+    if (!isAuthenticated || user?.role !== "admin" || !legacyProjects.length) return;
+    setLegacyMigrationStatus("saving");
+    try {
+      await Promise.all(
+        legacyProjects.map((item) =>
+          createRemoteProject.mutateAsync({
+            title: item.project.title || "名称未設定",
+            client: item.project.client || null,
+            eventMonth: item.project.eventMonth || null,
+            data: JSON.stringify(item.project),
+          }),
+        ),
+      );
+      setLegacyProjects([]);
+      setLegacyMigrationStatus("idle");
+      await remoteProjectsQuery.refetch();
+    } catch {
+      setLegacyMigrationStatus("error");
+    }
+  };
 
   const visibleProjects = useMemo(() => { const normalized = query.trim().toLowerCase(); return normalized ? projects.filter(({ project }) => `${project.title ?? ""} ${project.client ?? ""}`.toLowerCase().includes(normalized)) : projects; }, [projects, query]);
   const openProject = (projectId: string) => setLocation(`/project?id=${encodeURIComponent(projectId)}`);
@@ -430,7 +469,7 @@ export default function ProjectIndex() {
   return (
     <div className="studio-shell manager-shell">
       <aside className="studio-sidebar no-print"><div className="brand-lockup"><span className="brand-mark" role="img" aria-label="Production Gantt Studio">PG</span><div><p className="brand-name">PRODUCTION</p><p className="brand-name brand-name-accent">GANTT STUDIO</p></div></div><div className="side-section-label">メニュー</div><nav className="side-nav" aria-label="案件管理メニュー"><button className="side-nav-item active"><FolderKanban size={17} />案件一覧<span className="side-nav-count">{projects.length}</span></button></nav><div className="manager-sidebar-note"><FileText size={16} /><div><b>あなたの案件</b><span>参加している案件だけを表示します。</span></div></div><div className="sidebar-bottom"><button className="side-nav-item" onClick={() => setShowArchive(true)}><RotateCcw size={17} />アーカイブ<span className="side-nav-count">{archive.length}</span></button><button className="side-nav-item" onClick={() => setShowManual(true)}><CircleHelp size={17} />使い方</button><button className="side-nav-item" onClick={() => setLocation("/faq")}><CircleHelp size={17} />よくある質問</button><div className="profile-row"><span className="avatar">{user?.name?.slice(0, 2) || "未"}</span><span><strong>{user?.name || "ログインしていません"}</strong><small>{user?.role === "admin" ? "管理者" : "編集者"}</small></span></div></div></aside>
-      <main className="studio-main manager-main"><header className="topbar no-print"><div className="breadcrumb"><strong>案件一覧</strong></div><div className="topbar-actions"><button className="signal-button" onClick={openCreate} disabled={loading}><Plus size={17} />{isAuthenticated ? "新規案件" : "ログイン"}</button></div></header><section className="manager-heading"><div><h1>案件一覧</h1><p>案件を選ぶと、タスクと日程をすぐに確認できます。</p></div><div className="manager-summary"><span>表示中の案件</span><strong>{projects.length}<small>件</small></strong><p>{isAuthenticated ? "あなたが参加している案件" : "ログインして案件を管理"}</p></div></section><section className="manager-toolbar no-print" aria-label="案件を検索"><div className="search-field"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="案件名またはクライアント名を検索" /><kbd>⌘K</kbd></div><button className="utility-button" onClick={() => setShowArchive(true)}><RotateCcw size={15} />アーカイブ {archive.length}</button><span>{visibleProjects.length} 件を表示</span></section>
+      <main className="studio-main manager-main"><header className="topbar no-print"><div className="breadcrumb"><strong>案件一覧</strong></div><div className="topbar-actions"><button className="signal-button" onClick={openCreate} disabled={loading}><Plus size={17} />{isAuthenticated ? "新規案件" : "ログイン"}</button></div></header><section className="manager-heading"><div><h1>案件一覧</h1><p>案件を選ぶと、タスクと日程をすぐに確認できます。</p></div><div className="manager-summary"><span>表示中の案件</span><strong>{projects.length}<small>件</small></strong><p>{isAuthenticated ? "あなたが参加している案件" : "ログインして案件を管理"}</p></div></section>{isAuthenticated && user?.role === "admin" && legacyProjects.length > 0 && <section className="legacy-migration-notice no-print" aria-live="polite"><div><b>このブラウザに以前の案件があります</b><span>Sampleは保存しません。必要な案件だけを確認してから保存できます。</span>{legacyMigrationStatus === "error" && <small>保存できませんでした。ログイン状態を確認して、もう一度お試しください。</small>}</div><button className="outline-button" type="button" onClick={migrateLegacyProjects} disabled={legacyMigrationStatus === "saving"}>{legacyMigrationStatus === "saving" ? "保存中" : `以前の案件を保存（${legacyProjects.length}件）`}</button></section>}<section className="manager-toolbar no-print" aria-label="案件を検索"><div className="search-field"><Search size={16} /><input value={query} onChange={(event) => setQuery(event.target.value)} placeholder="案件名またはクライアント名を検索" /><kbd>⌘K</kbd></div><button className="utility-button" onClick={() => setShowArchive(true)}><RotateCcw size={15} />アーカイブ {archive.length}</button><span>{visibleProjects.length} 件を表示</span></section>
         {visibleProjects.length ? <section className="project-card-grid" aria-label="案件一覧">{visibleProjects.map(({ id, project, accessRole }) => { const tasks = project.tasks ?? []; const reviewCount = tasks.filter((task) => task.status === "クライアント確認中" || task.status === "修正中").length; const unscheduledCount = tasks.filter((task) => task.isUnscheduled).length; const registeredMonth = project.registeredMonth || monthFromDate(project.updatedAt) || monthFromDate(tasks.map((task) => task.start).filter(Boolean).sort()[0]); const fallbackEventMonth = monthFromDate(tasks.filter((task) => !task.isUnscheduled).map((task) => task.end).filter(Boolean).sort().at(-1)); const progress = projectProgress(tasks); const canArchive = !isAuthenticated || accessRole !== "viewer"; return <article key={id} className="manager-project-card"><div className="manager-card-top"><span>案件</span><time>更新 {formatDateTime(project.updatedAt)}</time></div><div className="manager-card-title"><h2>{project.title || "名称未設定"}</h2><p>{project.client || "クライアント未設定"}</p></div><div className="manager-card-period"><CalendarDays size={14} /><span>登録 {formatMonth(registeredMonth)}</span><i /><span>開催 {formatMonth(project.eventMonth || fallbackEventMonth)}</span></div><div className="manager-card-status"><div className="manager-progress-track"><i style={{ width: `${progress}%` }} /></div><b>{progress}% 完了</b><span>{formatRange(tasks)}</span></div><dl className="manager-card-stats"><div><dt>タスク</dt><dd>{tasks.length}</dd></div><div><dt>確認待ち</dt><dd>{reviewCount}</dd></div><div><dt>日程未定</dt><dd>{unscheduledCount}</dd></div></dl><div className="manager-card-actions"><button className="manager-open-button" onClick={() => openProject(id)}>案件を開く <ChevronRight size={16} /></button>{canArchive && <button className="manager-delete-button" onClick={() => archiveProject(id, project.title ?? "")} title="アーカイブへ移す" aria-label={`${project.title || "名称未設定"}をアーカイブへ移す`}><Trash2 size={15} /></button>}</div></article>; })}</section> : <section className="manager-empty"><div><FolderKanban size={28} /><p>案件はまだありません</p><h2>{query ? "該当する案件がありません。" : "最初の案件を作成しましょう。"}</h2><span>{query ? "検索語を変えるか、新しい案件を作成してください。" : "案件名とクライアント名を入力し、作り方を選択してください。"}</span><button className="signal-button" onClick={openCreate}><Plus size={17} />新規案件</button></div></section>}
       </main>
       {isCreating && <div className="modal-backdrop no-print" onMouseDown={() => setIsCreating(false)}><form className="project-create-modal" onSubmit={createProject} onMouseDown={(event) => event.stopPropagation()}><button type="button" className="icon-button close-modal" aria-label="閉じる" onClick={() => setIsCreating(false)}><X size={18} /></button><p>新規案件</p><h2>案件情報と作り方を選択</h2><span>案件名、クライアント名、開催月を入力し、完全新規または制作に合うテンプレートを選びます。テンプレートのタスクは日程未定・未着手で作成されます。</span><label>案件名<input autoFocus required value={draftTitle} onChange={(event) => setDraftTitle(event.target.value)} placeholder="例：2026 春季キャンペーン" /></label><label>クライアント名<input required value={draftClient} onChange={(event) => setDraftClient(event.target.value)} placeholder="例：株式会社サンプル" /></label><label>開催月<input type="month" required value={draftEventMonth} onChange={(event) => setDraftEventMonth(event.target.value)} /></label><fieldset className="template-choice-set"><legend>作り方</legend><div className="template-choice-grid">{projectTemplateOptions.map((option) => <button key={option.id} type="button" className={`template-choice ${selectedTemplate === option.id ? "is-selected" : ""}`} aria-pressed={selectedTemplate === option.id} onClick={() => setSelectedTemplate(option.id)}><b>{option.title}</b><span>{option.description}</span></button>)}</div></fieldset><div><button type="button" className="outline-button" onClick={() => setIsCreating(false)}>キャンセル</button><button type="submit" className="signal-button" disabled={!draftTitle.trim() || !draftClient.trim() || !draftEventMonth}>{selectedTemplate === "blank" ? "完全新規で作成" : "テンプレートで作成"}</button></div></form></div>}
