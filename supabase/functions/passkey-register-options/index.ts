@@ -23,7 +23,7 @@ Deno.serve((req) =>
     const options = await generateRegistrationOptions({
       rpName: PASSKEY_RP_NAME,
       rpID: PASSKEY_RP_ID,
-      userID: webauthnUserId,
+      userID: new TextEncoder().encode(webauthnUserId),
       userName: profile.email ?? user.email ?? "admin",
       userDisplayName: profile.email ?? user.email ?? "管理者",
       attestationType: "none",
