@@ -1,6 +1,10 @@
 export type AccountRole = "admin" | "user" | undefined;
 export type ProjectAccessRole = "owner" | "editor" | "viewer" | undefined;
 
+export function canStartProjectCreation(isAuthenticated: boolean, accountRole: AccountRole): boolean {
+  return !isAuthenticated || accountRole === "admin";
+}
+
 export function getProjectAccessPresentation(input: { accountRole: AccountRole; projectAccessRole: ProjectAccessRole; sharedView: boolean; invitePreview: boolean }) {
   const readOnly = input.sharedView || input.invitePreview || input.projectAccessRole === "viewer";
   const roleLabel = readOnly ? "閲覧者" : input.accountRole === "admin" || input.projectAccessRole === "owner" ? "管理者" : "編集者";

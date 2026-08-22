@@ -1,5 +1,13 @@
 import { describe, expect, it } from "vitest";
-import { getProjectAccessPresentation } from "./accessControl";
+import { canStartProjectCreation, getProjectAccessPresentation } from "./accessControl";
+
+describe("canStartProjectCreation", () => {
+  it("shows the login entry before authentication and the creation entry only to administrators after authentication", () => {
+    expect(canStartProjectCreation(false, undefined)).toBe(true);
+    expect(canStartProjectCreation(true, "admin")).toBe(true);
+    expect(canStartProjectCreation(true, "user")).toBe(false);
+  });
+});
 
 describe("getProjectAccessPresentation", () => {
   it("allows administrators to directly edit names and open detailed settings", () => {
