@@ -1,6 +1,6 @@
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
-import { TRPCClientError } from "@trpc/client";
+import { requireSupabaseClient } from "@/lib/supabaseClient";
 import { useCallback, useEffect, useMemo } from "react";
 
 type UseAuthOptions = {
@@ -9,10 +9,12 @@ type UseAuthOptions = {
 };
 
 export function useAuth(options?: UseAuthOptions) {
-  // Login is started via startLogin() in the effect below, only when we actually
-  // navigate — never during render. startLogin() mints a one-time nonce + writes
-  // the state cookie, so calling it per render would overwrite the cookie and
-  // desync it from an in-flight login's `state`.
+  // Login is started via startLogin() in the effect below, only when we
+  // actually navigate/prompt — never during render. startLogin() (see
+  // const.ts) now opens a small email-link login prompt backed by Supabase
+  // Auth's signInWithOtp, instead of redirecting to the old Manus OAuth
+  // portal — calling it more than once just re-opens/focuses that prompt, so
+  // there is no nonce-desync risk like the old cookie-based flow had.
   const { redirectOnUnauthenticated = false, redirectPath } = options ?? {};
   const utils = trpc.useUtils();
 
@@ -29,32 +31,27 @@ export function useAuth(options?: UseAuthOptions) {
 
   const logout = useCallback(async () => {
     try {
-      await logoutMutation.mutateAsync();
-    } catch (error: unknown) {
-      if (
-        error instanceof TRPCClientError &&
-        error.data?.code === "UNAUTHORIZED"
-      ) {
-        return;
-      }
-      throw error;
+      await logoutMutation.mutateAsync(undefined);
     } finally {
-      // Clear the Preview auto-login token mirrored into sessionStorage, so
-      // header-based sessions (Safari ITP / WebView) are logged out too. The
-      // backend cookie is cleared by the logout mutation.
-      try {
-        sessionStorage.removeItem("manus-cookie");
-      } catch {}
       utils.auth.me.setData(undefined, null);
       await utils.auth.me.invalidate();
     }
   }, [logoutMutation, utils]);
 
+  // Keep "me" in sync with Supabase's own auth state (sign-in via magic
+  // link/PKCE callback, sign-out, silent token refresh) — react-query has no
+  // way to know about these on its own, since they originate from
+  // supabase-js's internal listener rather than from a query/mutation this
+  // hook issued itself.
+  useEffect(() => {
+    const supabase = requireSupabaseClient();
+    const { data: subscription } = supabase.auth.onAuthStateChange(() => {
+      utils.auth.me.invalidate();
+    });
+    return () => subscription.subscription.unsubscribe();
+  }, [utils]);
+
   const state = useMemo(() => {
-    localStorage.setItem(
-      "manus-runtime-user-info",
-      JSON.stringify(meQuery.data)
-    );
     return {
       user: meQuery.data ?? null,
       loading: meQuery.isLoading || logoutMutation.isPending,
@@ -76,7 +73,6 @@ export function useAuth(options?: UseAuthOptions) {
     if (typeof window === "undefined") return;
     if (redirectPath && window.location.pathname === redirectPath) return;
 
-    // Navigate at this moment only. startLogin() mints the nonce + cookie itself.
     if (redirectPath) {
       window.location.href = redirectPath;
     } else {

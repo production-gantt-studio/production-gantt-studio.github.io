@@ -1,0 +1,25 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Production Gantt Studio</title>
+    <script>
+      // GitHub Pages SPA fallback. GitHub Pages has no server-side router, so
+      // it serves this file for any URL it doesn't recognize as a real file
+      // (e.g. a direct load or reload of
+      // /production-gantt-studio/project, /production-gantt-studio/invite,
+      // or /production-gantt-studio/auth/callback — all real, path-based
+      // Wouter routes, deliberately NOT hash-fragment routes). This encodes
+      // the actual requested path into a query string and redirects to the
+      // real index.html, whose inline head script (see client/index.html)
+      // decodes it back into history.replaceState before the app's router
+      // ever runs — so the app ends up on the correct route exactly as if
+      // this direct load had hit index.html in the first place. Adapted from
+      // the well-known rafgraph/spa-github-pages technique.
+      var basePath = "/production-gantt-studio";
+      var path = location.pathname.slice(basePath.length) + location.search + location.hash;
+      location.replace(basePath + "/?redirect=" + encodeURIComponent(path));
+    </script>
+  </head>
+  <body></body>
+</html>

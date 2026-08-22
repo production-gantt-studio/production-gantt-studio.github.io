@@ -19,7 +19,19 @@ const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY as string | undef
 let client: SupabaseClient<Database> | null = null;
 
 if (supabaseUrl && supabaseAnonKey) {
-  client = createClient<Database>(supabaseUrl, supabaseAnonKey);
+  client = createClient<Database>(supabaseUrl, supabaseAnonKey, {
+    auth: {
+      // PKCE (not the implicit flow, and NOT HashRouter/hash-fragment
+      // tokens): the auth code arrives as a `?code=` query param on
+      // /auth/callback, which is a normal path-based route under Wouter —
+      // see vite.config.ts base + client/src/App.tsx for how that route is
+      // registered for GitHub Pages.
+      flowType: "pkce",
+      persistSession: true,
+      autoRefreshToken: true,
+      detectSessionInUrl: true,
+    },
+  });
 } else if (import.meta.env.DEV) {
   // Expected in Phase 1: nothing calls getSupabaseClient() yet, so this is
   // informational only, not an error.
@@ -34,5 +46,21 @@ if (supabaseUrl && supabaseAnonKey) {
  * Supabase is always available.
  */
 export function getSupabaseClient(): SupabaseClient<Database> | null {
+  return client;
+}
+
+/**
+ * Phase 2: the data/auth layer genuinely requires Supabase to be configured
+ * (unlike Phase 1, which never called this at all). Throws a clear,
+ * actionable error rather than silently no-op'ing, so a missing
+ * VITE_SUPABASE_URL/VITE_SUPABASE_ANON_KEY at build time fails loudly
+ * instead of behaving like "no one is ever logged in".
+ */
+export function requireSupabaseClient(): SupabaseClient<Database> {
+  if (!client) {
+    throw new Error(
+      "Supabase is not configured (VITE_SUPABASE_URL / VITE_SUPABASE_ANON_KEY are missing). Set them at build time — see .env.supabase.example.",
+    );
+  }
   return client;
 }

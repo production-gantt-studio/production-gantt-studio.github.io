@@ -5,6 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Production Gantt Studio</title>
     <meta name="description" content="広告・映像・イベント・グラフィック制作のプロデューサー／PM向けガントチャートアプリ" />
+    <script>
+      // Decode the ?redirect= param 404.html (see client/public/404.html)
+      // encoded the real path into, and restore it via history.replaceState
+      // BEFORE the app's own router (Wouter) ever reads location — this must
+      // run synchronously here in <head>, ahead of the module script that
+      // boots React, or the router would see the temporary "?redirect=..."
+      // URL instead of the real one. A no-op on every normal navigation
+      // (there's no ?redirect= param unless 404.html put it there).
+      (function () {
+        var params = new URLSearchParams(window.location.search);
+        var redirect = params.get("redirect");
+        if (!redirect) return;
+        params.delete("redirect");
+        var basePath = "/production-gantt-studio";
+        var rest = params.toString();
+        var restoredPath = basePath + redirect + (rest ? (redirect.includes("?") ? "&" : "?") + rest : "");
+        window.history.replaceState(null, "", restoredPath);
+      })();
+    </script>
   </head>
   <body>
     <div id="root"></div>

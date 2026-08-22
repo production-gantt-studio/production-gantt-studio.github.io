@@ -13,9 +13,80 @@ project_id = "production-gantt-studio"
 # reason not to.
 verify_jwt = false
 
+# Phase 2 business functions. Two are genuinely public/unauthenticated
+# (mirroring the original tRPC publicProcedure endpoints of the same name) —
+# verify_jwt must be off for those or Supabase's own gateway would reject
+# anonymous callers before our own code (which does its own token-based
+# lookup, not session-based) ever runs. Every other function keeps
+# verify_jwt = true (the default): the platform checks the caller has *a*
+# valid Supabase session before the function body runs, and the function
+# body itself re-derives and re-checks the specific user/role/project
+# authorization on every call regardless (see _shared/http.ts + _shared/db.ts) —
+# this is deliberate defense in depth, not redundant.
+
+[functions.invite-preview]
+verify_jwt = false
+
+[functions.get-shared-project]
+verify_jwt = false
+
+[functions.bootstrap-admin]
+verify_jwt = true
+
+[functions.create-project]
+verify_jwt = true
+
+[functions.update-project]
+verify_jwt = true
+
+[functions.delete-project]
+verify_jwt = true
+
+[functions.archive-project]
+verify_jwt = true
+
+[functions.restore-project]
+verify_jwt = true
+
+[functions.create-invite]
+verify_jwt = true
+
+[functions.accept-invite]
+verify_jwt = true
+
+[functions.revoke-invite]
+verify_jwt = true
+
+[functions.create-share-link]
+verify_jwt = true
+
+[functions.revoke-share-link]
+verify_jwt = true
+
+# create-forwarded-share-link is the one deliberately PUBLIC, no-JWT business
+# function: a viewer holding a valid share link can mint a child link for the
+# same project without logging in (see that function's own comment for its 9
+# fixed input/output/security requirements). verify_jwt must be off for the
+# same reason as invite-preview/get-shared-project above — this function does
+# its own token-based lookup, not session-based auth.
+[functions.create-forwarded-share-link]
+verify_jwt = false
+
 # Required secrets (set via `supabase secrets set`, never committed):
 #   SUPABASE_SERVICE_ROLE_KEY  - service role key, Edge Function use only
 #   ALLOWED_ORIGINS            - comma-separated list, e.g.
 #                                "https://<production-url>,http://localhost:5173"
+#   AUDIT_IP_HASH_SECRET       - HMAC key for hashing requester IPs into
+#                                security_audit_logs.ip_hash (never store raw
+#                                IPs); Edge Function secret only.
+#   ADMIN_BOOTSTRAP_EMAIL      - the one email address allowed to ever call
+#                                bootstrap-admin successfully (normalized,
+#                                exact-match compared against the caller's own
+#                                verified email server-side — see
+#                                supabase/functions/bootstrap-admin/index.ts).
+#                                Must match the ADMIN_EMAIL used when running
+#                                supabase/scripts/create-initial-admin.ts.
+#                                Edge Function secret only — never exposed to
+#                                any client, never logged.
 # SUPABASE_URL and SUPABASE_ANON_KEY are provided automatically to every Edge
 # Function by the Supabase platform and do not need to be set manually.

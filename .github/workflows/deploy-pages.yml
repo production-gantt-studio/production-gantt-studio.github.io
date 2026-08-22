@@ -1,0 +1,81 @@
+name: Deploy to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch: {}
+
+# Only ever read repo contents and the Pages/OIDC tokens GitHub itself issues
+# for this specific deploy — never a broader token, and no secrets are ever
+# printed to logs or embedded in the built output beyond the two PUBLIC
+# Supabase values below (anon key + project URL — both are meant to ship to
+# the browser; see client/src/lib/supabaseClient.ts's own comment on why that
+# is safe by Supabase's design, RLS being the actual protection boundary).
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pages
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up pnpm
+        uses: pnpm/action-setup@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+
+      - name: Install dependencies (pinned, frozen lockfile)
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm run check
+
+      - name: Run tests
+        run: pnpm test
+
+      - name: Dependency audit (fail on high/critical)
+        run: pnpm audit --audit-level=high
+
+      - name: Build
+        env:
+          NODE_ENV: production
+          # These two are intentionally public browser configuration values.
+          # They cannot access protected data on their own: Supabase Auth and
+          # Postgres RLS enforce the actual access boundary. Repository
+          # Actions-variable writes are unavailable to this deployment token,
+          # so the public values are declared here rather than omitted.
+          VITE_SUPABASE_URL: https://pcudvibzfsmblztcriib.supabase.co
+          VITE_SUPABASE_ANON_KEY: sb_publishable_Vim24FexLYtzT1znq-wX9A_htIpU3AD
+        # Static client build only (`vite build`) — not the full `pnpm run
+        # build`, which also esbuild-bundles the old Express server. GitHub
+        # Pages serves static files only; the independent execution path has
+        # no server component at all (see docs/phase2_supabase_data_layer.md).
+        run: pnpm exec vite build
+
+      - name: Upload build artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist/public
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
