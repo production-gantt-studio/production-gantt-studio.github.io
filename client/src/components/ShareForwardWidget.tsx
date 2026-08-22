@@ -21,19 +21,11 @@
 
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
+import { toAppUrl } from "@/lib/appUrl";
 
 function currentShareToken(): string | null {
   if (typeof window === "undefined") return null;
   return new URLSearchParams(window.location.search).get("share");
-}
-
-function absoluteShareUrl(relativePath: string): string {
-  // create-forwarded-share-link returns a relative path (see its own
-  // comment for why) — this turns it back into something copyable, using
-  // the app's own base path exactly like every other in-app link already
-  // does (vite.config.ts's `base`).
-  const base = (import.meta.env.BASE_URL ?? "/").replace(/\/$/, "");
-  return `${window.location.origin}${base}${relativePath}`;
 }
 
 export default function ShareForwardWidget() {
@@ -59,7 +51,7 @@ export default function ShareForwardWidget() {
     setResult(null);
     try {
       const res = await forward.mutateAsync({ parentToken: shareToken });
-      setResult({ url: absoluteShareUrl(res.shareUrl), expiresAt: res.expiresAt });
+      setResult({ url: toAppUrl(res.shareUrl), expiresAt: res.expiresAt });
     } catch (err) {
       setError(err instanceof Error ? err.message : "この共有URLは利用できません。");
     }

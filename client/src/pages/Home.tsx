@@ -6,6 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getProjectAccessPresentation } from "@/lib/accessControl";
+import { toAppUrl } from "@/lib/appUrl";
 import { normalizeInlineName } from "@/lib/inlineEditing";
 import { insertItemAfter } from "@/lib/phaseEditing";
 import { selectPdfScopeTasks } from "@/lib/pdfScope";
@@ -1095,7 +1096,10 @@ export default function Home() {
     }
     try {
       const result = await createProjectShare.mutateAsync({ publicId: projectId, origin: window.location.origin, expiresInDays: 7 });
-      await navigator.clipboard.writeText(result.shareUrl);
+      // create-share-link only knows our origin, not the /production-gantt-studio/
+      // base path the SPA is served under — re-anchor before copying, or the
+      // recipient lands on a GitHub Pages 404. See lib/appUrl.ts.
+      await navigator.clipboard.writeText(toAppUrl(result.shareUrl));
       setShareCopied(true);
       toast.success("7日間有効な閲覧専用リンクをコピーしました");
       await projectSharesQuery.refetch();
