@@ -16,7 +16,7 @@
       // ever runs — so the app ends up on the correct route exactly as if
       // this direct load had hit index.html in the first place. Adapted from
       // the well-known rafgraph/spa-github-pages technique.
-      var basePath = "/production-gantt-studio";
+      var basePath = "";
       var path = location.pathname.slice(basePath.length) + location.search + location.hash;
       location.replace(basePath + "/?redirect=" + encodeURIComponent(path));
     </script>

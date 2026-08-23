@@ -18,7 +18,7 @@
         var redirect = params.get("redirect");
         if (!redirect) return;
         params.delete("redirect");
-        var basePath = "/production-gantt-studio";
+        var basePath = "";
         var rest = params.toString();
         var restoredPath = basePath + redirect + (rest ? (redirect.includes("?") ? "&" : "?") + rest : "");
         window.history.replaceState(null, "", restoredPath);
