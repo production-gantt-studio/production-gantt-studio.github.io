@@ -22,6 +22,7 @@
 import { useEffect, useState } from "react";
 import { trpc } from "@/lib/trpc";
 import { toAppUrl } from "@/lib/appUrl";
+import { isShareLinkUnusable } from "@/lib/shareLinkState";
 
 function currentShareToken(): string | null {
   if (typeof window === "undefined") return null;
@@ -34,6 +35,10 @@ export default function ShareForwardWidget() {
   const [result, setResult] = useState<{ url: string; expiresAt: string } | null>(null);
   const [error, setError] = useState<string | null>(null);
   const forward = trpc.projects.createForwardedShare.useMutation();
+  // Same query key Home.tsx uses, so this shares that result rather than
+  // issuing a second request. A revoked or expired link must not still offer
+  // "この案件を共有する" — forwarding it cannot work.
+  const preview = trpc.projects.sharePreview.useQuery({ token: shareToken ?? "" }, { enabled: Boolean(shareToken) });
 
   useEffect(() => {
     // Share links in this app are always full-page-style loads, but this
@@ -45,6 +50,12 @@ export default function ShareForwardWidget() {
   }, []);
 
   if (!shareToken) return null;
+  if (isShareLinkUnusable({
+    shareToken,
+    isError: preview.isError,
+    isSuccess: preview.isSuccess,
+    hasProject: Boolean(preview.data?.project),
+  })) return null;
 
   const onCreate = async () => {
     setError(null);
