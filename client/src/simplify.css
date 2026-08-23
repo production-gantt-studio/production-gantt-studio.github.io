@@ -628,3 +628,10 @@
 @media (max-width: 760px) {
   .timeline-card .status-pill { max-width: 92px; overflow: hidden; white-space: nowrap; }
 }
+
+/* 狭い幅では「日程・詳細」のラベルを外してアイコンだけにする。ここで約85px
+   空き、タスク名がその分読めるようになる（押した先の画面は変わらない）。 */
+@media (max-width: 760px) {
+  .timeline-card .task-more-button { min-width: 26px; padding: 0 4px !important; }
+  .timeline-card .task-more-button::after { content: none; }
+}
