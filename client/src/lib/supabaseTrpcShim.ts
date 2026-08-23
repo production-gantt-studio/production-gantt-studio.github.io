@@ -28,7 +28,7 @@ import {
   type UseQueryOptions,
 } from "@tanstack/react-query";
 import { requireSupabaseClient } from "./supabaseClient";
-import { projectRowToClientShape, rowToCamelCase, rowsToCamelCase } from "./caseMapping";
+import { previewPayloadToClientShape, projectRowToClientShape, rowToCamelCase, rowsToCamelCase } from "./caseMapping";
 
 // ---------------------------------------------------------------------------
 // Shared helpers
@@ -328,14 +328,24 @@ async function createForwardedShare(input: { parentToken: string }): Promise<For
   return callFunction<ForwardedShareResult>("create-forwarded-share-link", input);
 }
 
+// invite-preview and get-shared-project are the two public, no-JWT endpoints,
+// and both hand back the raw `projects` row: snake_case keys with `data` still
+// a jsonb OBJECT. Every other query in this shim runs its rows through
+// projectRowToClientShape first; these two did not, so `JSON.parse(remote.data)`
+// in Home.tsx threw on "[object Object]" and the screen silently kept whatever
+// project was already in local storage — i.e. a share link rendered the WRONG
+// project. Map them at the same boundary as everything else.
+
 async function fetchInvitePreview(input: { token: string }): Promise<InvitePreviewResult> {
   if (!input.token) return null;
-  return callFunction<InvitePreviewResult>("invite-preview", input);
+  const result = await callFunction<Record<string, unknown> | null>("invite-preview", input);
+  return previewPayloadToClientShape(result) as InvitePreviewResult;
 }
 
 async function fetchSharePreview(input: { token: string }): Promise<SharePreviewResult> {
   if (!input.token) return null;
-  return callFunction<SharePreviewResult>("get-shared-project", input);
+  const result = await callFunction<Record<string, unknown> | null>("get-shared-project", input);
+  return previewPayloadToClientShape(result) as SharePreviewResult;
 }
 
 // ---------------------------------------------------------------------------

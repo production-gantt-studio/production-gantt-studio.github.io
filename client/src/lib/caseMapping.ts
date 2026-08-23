@@ -54,3 +54,20 @@ export function projectRowToClientShape(row: Record<string, unknown> | null | un
   const camel = rowToCamelCase<Record<string, unknown>>(row)!;
   return { ...camel, data: JSON.stringify(row.data ?? {}) };
 }
+
+/**
+ * The two public, no-JWT preview endpoints (invite-preview,
+ * get-shared-project) return an envelope whose `project` field is a raw
+ * `projects` row rather than a client-shaped one. Left unmapped, `data` stays
+ * a jsonb object and the screens' `JSON.parse(project.data)` throws — which
+ * they swallow, leaving the previously loaded (wrong) project on screen. This
+ * applies the same conversion the rest of the shim already does, to the
+ * `project` field only.
+ */
+export function previewPayloadToClientShape<T extends { project?: unknown }>(payload: T | null | undefined): T | null {
+  if (payload == null) return null;
+  return {
+    ...payload,
+    project: projectRowToClientShape(payload.project as Record<string, unknown> | null | undefined),
+  };
+}
