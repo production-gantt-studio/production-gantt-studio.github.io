@@ -1,7 +1,10 @@
 /* ══════════════════════════════════════════════════════════════════════════
-   スマホ幅（760px以下）の案件画面。
-   このファイルの中身はすべて @media (max-width: 760px) の内側に置く。
-   761px以上の表示には1ルールも効かせない＝PCの見た目は変えない。
+   指で触る幅（860px以下＝スマホと縦向きタブレット）の案件画面。
+   このファイルの中身はすべて @media (max-width: 860px) の内側に置く。
+   861px以上の表示には1ルールも効かせない＝PCの見た目は変えない。
+   幅の根拠は client/src/hooks/useNarrowViewport.ts のコメントに書いてある。
+   この2つの数字は必ず同じにすること（片方だけ変えると、画面は出るのに
+   スタイルが当たらない／その逆になる）。
 
    ガントの位置決めの約束：
    目盛り（.pgm-scale）・帯（.pgm-track）・今日の線と目盛り線（.pgm-rows）は、
@@ -10,7 +13,7 @@
    別の箱に入れたりすると、目盛りと帯がズレる。
    ══════════════════════════════════════════════════════════════════════════ */
 
-@media (max-width: 760px) {
+@media (max-width: 860px) {
   .studio-shell.is-mobile-shell {
     display: block;
     min-height: 100vh;
@@ -393,7 +396,10 @@
     font-style: normal;
   }
 
+  /* 重要タスクの旗はタスク名と同じ行に置く。既定のCSSリセットがsvgをブロック要素に
+     するため、明示的に文字と同じ扱いへ戻さないと旗だけ1行使ってしまう。 */
   .pgm-card-name svg {
+    display: inline-block;
     margin-right: 4px;
     color: var(--state-danger);
     vertical-align: -1px;
@@ -1092,4 +1098,31 @@
   @media (prefers-reduced-motion: reduce) {
     .pgm-sheet { animation: none; }
   }
+}
+
+/* ── 縦向きタブレット（700〜860px） ─────────────────────────────────
+   スマホと同じ画面だが、横幅が倍近くある。カードを1列のまま伸ばすと間延びして
+   読みにくいので2列にし、余白と文字を少しだけ大きくする。ガントは横幅がある
+   ほど読めるので、こちらは幅いっぱいのまま変えない。 */
+@media (min-width: 700px) and (max-width: 860px) {
+  .pgm-topbar { padding: 10px 16px; }
+  .pgm-topbar-title strong { font-size: 15px; }
+  .pgm-main { padding: 16px 18px 92px; }
+
+  .pgm-cards { grid-template-columns: 1fr 1fr; align-items: start; }
+  .pgm-card { gap: 8px; padding: 14px; }
+  .pgm-card-name { font-size: 15px; }
+
+  .pgm-summary { padding: 16px; }
+  .pgm-summary-next { padding: 12px 14px; }
+
+  .pgm-chips button { min-height: 42px; padding: 0 12px; font-size: 13px; }
+  .pgm-plot { padding: 12px 18px 8px; }
+  .pgm-row-name { font-size: 13px; }
+  .pgm-track { height: 17px; }
+
+  /* シートは幅いっぱいだと1行が長すぎて読みにくい。中央に寄せて幅を止める。 */
+  .pgm-sheet { max-width: 660px; margin: 0 auto; }
+
+  .pgm-tabs button { min-height: 62px; font-size: 12px; }
 }

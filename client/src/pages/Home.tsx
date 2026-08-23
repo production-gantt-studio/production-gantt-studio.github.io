@@ -422,7 +422,7 @@ export default function Home() {
   // nonce cookie and must run only at the moment of navigation.
   const { isAuthenticated, user } = useAuth();
 
-  // 760px以下は専用のスマホ画面に差し替える。それより広い画面はこれまでのまま。
+  // 860px以下（スマホと縦向きタブレット）は専用画面に差し替える。それより広い画面はこれまでのまま。
   const isNarrow = useNarrowViewport();
   const [, setLocation] = useLocation();
   const shareToken = new URLSearchParams(window.location.search).get("share");
