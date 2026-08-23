@@ -45,9 +45,6 @@ function inviteBaseUrl(rawOrigin: string): string {
     .map((value) => value.trim())
     .filter(Boolean);
   if (!allowed.includes(origin)) throw new AppError(400, "招待リンクの発行元が許可されていません。");
-  if (url.pathname === "/" && origin === "https://rikufujita1229-sudo.github.io") {
-    url.pathname = "/production-gantt-studio/";
-  }
   return url.toString().replace(/\/+$/, "") + "/";
 }
 

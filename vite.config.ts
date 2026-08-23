@@ -12,15 +12,14 @@ import { defineConfig } from "vite";
 // and why.
 const plugins = [react(), tailwindcss(), jsxLocPlugin()];
 
-// GitHub Pages serves this app from a repository subpath
-// (https://<user>.github.io/production-gantt-studio/), not the domain root.
-// Local development (`pnpm dev`) still runs at "/". Wouter's own base path
-// (see client/src/App.tsx's `routerBase`) is derived from this same
-// import.meta.env.BASE_URL at runtime, so both modes resolve routes
-// (including /auth/callback) correctly with the same code.
-export default defineConfig(({ mode }) => ({
+// GitHub Pages serves this app from the domain root
+// (https://production-gantt-studio.github.io/), same as local dev ("/").
+// Wouter's own base path (see client/src/App.tsx's `routerBase`) is derived
+// from this same import.meta.env.BASE_URL at runtime, so both modes resolve
+// routes (including /auth/callback) correctly with the same code.
+export default defineConfig(() => ({
   plugins,
-  base: mode === "production" ? "/production-gantt-studio/" : "/",
+  base: "/",
   resolve: {
     alias: {
       "@": path.resolve(import.meta.dirname, "client", "src"),

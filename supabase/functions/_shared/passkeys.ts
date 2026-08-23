@@ -1,6 +1,6 @@
 import { AppError } from "./db.ts";
 
-export const PASSKEY_RP_ID = "rikufujita1229-sudo.github.io";
+export const PASSKEY_RP_ID = "production-gantt-studio.github.io";
 export const PASSKEY_ORIGIN = `https://${PASSKEY_RP_ID}`;
 export const PASSKEY_RP_NAME = "Production Gantt Studio";
 
