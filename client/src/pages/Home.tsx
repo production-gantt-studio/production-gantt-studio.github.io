@@ -6,6 +6,8 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
 import { useNarrowViewport } from "@/hooks/useNarrowViewport";
 import MobileProject from "@/components/mobile/MobileProject";
+import { ChangePasswordDialog } from "@/components/ChangePasswordDialog";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import type { Member, Milestone, Phase, PhaseDefinition, ProjectData, Status, Task } from "@/lib/projectTypes";
 import { statusMeta, statusOptions } from "@/lib/projectTypes";
 import { trpc } from "@/lib/trpc";
@@ -420,7 +422,7 @@ export default function Home() {
   // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
   // startLogin() during render (no href={startLogin()}) — it mints a one-time
   // nonce cookie and must run only at the moment of navigation.
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated, user, logout } = useAuth();
 
   // 860px以下（スマホと縦向きタブレット）は専用画面に差し替える。それより広い画面はこれまでのまま。
   const isNarrow = useNarrowViewport();
@@ -446,6 +448,7 @@ export default function Home() {
   const projectSharesQuery = trpc.projects.shares.useQuery({ publicId: projectId ?? "" }, { enabled: Boolean(projectId && isAuthenticated && remoteProjectQuery.data?.accessRole !== "viewer") });
   const accessPresentation = getProjectAccessPresentation({ accountRole: user?.role, projectAccessRole: remoteProjectQuery.data?.accessRole, sharedView, invitePreview: Boolean(inviteToken) });
   const { readOnly, roleLabel, roleDescription, canEditInline, showDetailSettings } = accessPresentation;
+  const [changePasswordOpen, setChangePasswordOpen] = useState(false);
   const [activePhase, setActivePhase] = useState<Phase | "all">("all");
   const [assigneeFilter, setAssigneeFilter] = useState("all");
   const [statusFilter, setStatusFilter] = useState<Status | "all">("all");
@@ -1314,10 +1317,25 @@ export default function Home() {
 
         <div className="sidebar-bottom">
           <button className="side-nav-item" title="使い方" onClick={() => setShowShortcuts(true)}><CircleHelp size={17} /><span className="side-nav-label">使い方</span></button>
-          <button className="profile-row" onClick={() => toast(roleDescription)}>
-            <span className="avatar">{user?.name?.slice(0, 2) || roleLabel.slice(0, 1)}</span><span><strong>{user?.name || roleLabel}</strong><small>{roleLabel}</small></span><MoreHorizontal size={17} />
-          </button>
+          {isAuthenticated ? (
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <button className="profile-row">
+                  <span className="avatar">{user?.name?.slice(0, 2) || roleLabel.slice(0, 1)}</span><span><strong>{user?.name || roleLabel}</strong><small>{roleLabel}</small></span><MoreHorizontal size={17} />
+                </button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end">
+                <DropdownMenuItem onClick={() => setChangePasswordOpen(true)}>パスワードを変更</DropdownMenuItem>
+                <DropdownMenuItem onClick={() => logout()}>ログアウト</DropdownMenuItem>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          ) : (
+            <button className="profile-row" onClick={() => toast(roleDescription)}>
+              <span className="avatar">{roleLabel.slice(0, 1)}</span><span><strong>{roleLabel}</strong><small>{roleLabel}</small></span><MoreHorizontal size={17} />
+            </button>
+          )}
         </div>
+        <ChangePasswordDialog open={changePasswordOpen} onOpenChange={setChangePasswordOpen} />
       </aside>
       )}
 
