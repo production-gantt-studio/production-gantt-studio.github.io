@@ -12,7 +12,6 @@ import ProjectIndex from "./pages/ProjectIndex";
 import AuthCallback from "./pages/AuthCallback";
 import AuthConfirm from "./pages/AuthConfirm";
 import ShareForwardWidget from "./components/ShareForwardWidget";
-import AdminPasskeySetup from "./components/AdminPasskeySetup";
 
 function RootEntry() {
   const query = new URLSearchParams(window.location.search);
@@ -54,7 +53,6 @@ function App() {
         <TooltipProvider>
           <Toaster richColors position="bottom-right" />
           <Router />
-          <AdminPasskeySetup />
           {/* Additive, self-contained viewer-share-forwarding widget — see
               its own file comment. Renders nothing unless the URL carries a
               `share` query param, so this has no effect on any other screen. */}

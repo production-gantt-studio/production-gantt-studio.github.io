@@ -1,23 +1,17 @@
-// Phase 2: startLogin() no longer redirects to the old Manus OAuth portal.
-// It now opens a small, self-mounted email-link login prompt backed by
-// Supabase Auth (signInWithOtp, shouldCreateUser: false — see the security
-// spec: self-service signup is intentionally disabled; only an email that
-// already has an account — the bootstrapped admin, or anyone provisioned via
-// the create-invite Edge Function — can ever receive a working login link).
+// startLogin() opens a small, self-mounted email+password login prompt
+// backed by Supabase Auth (signInWithPassword). Self-service signup is
+// intentionally disabled — only an email that already has an account (the
+// bootstrapped admin, or anyone provisioned via the create-invite Edge
+// Function, which also sets an initial password) can ever sign in.
 //
 // Every existing call site (`onClick={() => startLogin()}` in
 // DashboardLayout.tsx, ProjectIndex.tsx, Invite.tsx, and the redirect effect
 // in useAuth.ts) keeps calling this as a plain, argument-less, void function
-// — none of those files change. The old OAuth flow could fire-and-forget a
-// full-page redirect with no UI of its own; a magic-link flow inherently
-// needs an email address first, so this creates its own minimal, isolated UI
-// (a fixed-position overlay mounted directly onto document.body) rather than
-// requiring every calling screen to grow its own login form.
+// — none of those files change.
 
 import { createElement, useState, type FormEvent } from "react";
 import { createRoot, type Root } from "react-dom/client";
 import { requireSupabaseClient } from "@/lib/supabaseClient";
-import { passkeyErrorMessage, signInWithPasskey } from "@/lib/passkeyAuth";
 
 const CONTAINER_ID = "supabase-login-overlay-root";
 let mountedRoot: Root | null = null;
@@ -33,55 +27,33 @@ function closeOverlay() {
 
 function LoginOverlay() {
   const [email, setEmail] = useState("");
-  const [status, setStatus] = useState<"idle" | "sending" | "sent" | "error">("idle");
+  const [password, setPassword] = useState("");
+  const [status, setStatus] = useState<"idle" | "sending" | "error">("idle");
   const [message, setMessage] = useState("");
 
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     const trimmed = email.trim();
-    if (!trimmed) return;
+    if (!trimmed || !password) return;
     setStatus("sending");
     setMessage("");
     try {
       const supabase = requireSupabaseClient();
-      const { error } = await supabase.auth.signInWithOtp({
-        email: trimmed,
-        options: {
-          shouldCreateUser: false,
-          // The production email template sends its token_hash to
-          // /auth/confirm, where AuthConfirm explicitly calls verifyOtp().
-          // Using that dedicated route avoids relying on a PKCE code surviving
-          // mail scanners and a GitHub Pages SPA fallback round trip.
-          emailRedirectTo: `${window.location.origin}${import.meta.env.BASE_URL ?? "/"}auth/confirm`.replace(/([^:])\/\//, "$1/"),
-        },
-      });
+      const { error } = await supabase.auth.signInWithPassword({ email: trimmed, password });
       if (error) {
         setStatus("error");
         setMessage(
-          /signup|not allowed|not found/i.test(error.message)
-            ? "このメールアドレスはまだ招待・登録されていません。管理者に招待を依頼してください。"
+          /invalid/i.test(error.message)
+            ? "メールアドレスまたはパスワードが正しくありません。"
             : error.message,
         );
         return;
       }
-      setStatus("sent");
-      setMessage("ログイン用のリンクをメールで送信しました。メールを確認してください。");
-    } catch (err) {
-      setStatus("error");
-      setMessage(err instanceof Error ? err.message : "ログインの開始に失敗しました。");
-    }
-  };
-
-  const onPasskeyLogin = async () => {
-    setStatus("sending");
-    setMessage("");
-    try {
-      await signInWithPasskey();
       closeOverlay();
       window.location.reload();
-    } catch (error) {
+    } catch (err) {
       setStatus("error");
-      setMessage(passkeyErrorMessage(error));
+      setMessage(err instanceof Error ? err.message : "ログインに失敗しました。");
     }
   };
 
@@ -115,22 +87,7 @@ function LoginOverlay() {
         },
       },
       createElement("h2", { style: { margin: "0 0 8px", fontSize: 18 } }, "ログイン"),
-      createElement(
-        "p",
-        { style: { margin: "0 0 16px", fontSize: 13, color: "#475569", lineHeight: 1.5 } },
-        "登録済みのPasskeyがある場合は、メールを待たずにログインできます。",
-      ),
-      createElement(
-        "button",
-        {
-          type: "button",
-          onClick: onPasskeyLogin,
-          disabled: status === "sending",
-          style: { width: "100%", padding: "10px 12px", fontSize: 14, fontWeight: 600, borderRadius: 8, border: "1px solid #3976c7", background: "#eef5ff", color: "#235c9e", cursor: status === "sending" ? "wait" : "pointer", marginBottom: 12 },
-        },
-        status === "sending" ? "確認中" : "Passkeyでログイン",
-      ),
-      createElement("p", { style: { margin: "0 0 12px", fontSize: 12, color: "#64748b", lineHeight: 1.5 } }, "初めての端末では、管理者から届いた招待リンクで参加してください。"),
+      createElement("p", { style: { margin: "0 0 16px", fontSize: 12, color: "#64748b", lineHeight: 1.5 } }, "初めての端末では、管理者から届いた招待リンクで参加してください。"),
       createElement(
         "form",
         { onSubmit },
@@ -142,7 +99,25 @@ function LoginOverlay() {
           onChange: (e: any) => setEmail(e.target.value),
           placeholder: "name@example.com",
           "aria-label": "メールアドレス",
-          disabled: status === "sending" || status === "sent",
+          disabled: status === "sending",
+          style: {
+            width: "100%",
+            boxSizing: "border-box",
+            padding: "10px 12px",
+            fontSize: 14,
+            border: "1px solid #cbd5e1",
+            borderRadius: 8,
+            marginBottom: 12,
+          },
+        }),
+        createElement("input", {
+          type: "password",
+          required: true,
+          value: password,
+          onChange: (e: any) => setPassword(e.target.value),
+          placeholder: "パスワード",
+          "aria-label": "パスワード",
+          disabled: status === "sending",
           style: {
             width: "100%",
             boxSizing: "border-box",
@@ -160,7 +135,7 @@ function LoginOverlay() {
             "button",
             {
               type: "submit",
-              disabled: status === "sending" || status === "sent",
+              disabled: status === "sending",
               style: {
                 flex: 1,
                 padding: "10px 12px",
@@ -173,7 +148,7 @@ function LoginOverlay() {
                 cursor: status === "sending" ? "wait" : "pointer",
               },
             },
-            status === "sending" ? "送信中" : status === "sent" ? "送信済み" : "ログインリンクを送る",
+            status === "sending" ? "確認中" : "ログイン",
           ),
           createElement(
             "button",

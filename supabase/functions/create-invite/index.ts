@@ -80,26 +80,16 @@ Deno.serve((req) =>
 
     // Provision the login account FIRST (see ensureAuthUserForEmail's own
     // comment for why this is required with shouldCreateUser:false). No
-    // email is sent by this step; the owner/editor still shares the app's
-    // own invite link via the copy/mailto: flow in the client. If this
-    // throws, nothing below has run yet — no invite row is written, so there
-    // is no dangling pending invite left behind.
-    await ensureAuthUserForEmail(email);
+    // email is sent by this step; the owner/editor still shares the invite
+    // link and this password via the app's own copy/mailto: flow in the
+    // client. If this throws, nothing below has run yet — no invite row is
+    // written, so there is no dangling pending invite left behind.
+    const tempPassword = await ensureAuthUserForEmail(email);
 
     const token = createOpaqueToken();
     const tokenHash = await hashOpaqueToken(token);
     const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
     const invitePath = `/invite?token=${encodeURIComponent(token)}`;
-    const authRedirect = new URL("auth/confirm", appBaseUrl);
-    authRedirect.searchParams.set("next", invitePath);
-    const { data: authLink, error: authLinkError } = await supabase.auth.admin.generateLink({
-      type: "magiclink",
-      email,
-      options: { redirectTo: authRedirect.toString() },
-    });
-    if (authLinkError || !authLink.properties.hashed_token) {
-      throw new AppError(500, "招待用ログインリンクを作成できませんでした。");
-    }
 
     const { data: existing } = await supabase
       .from("project_members")
@@ -139,10 +129,13 @@ Deno.serve((req) =>
       ipHash: await hashIpAddress(ip),
     });
 
-    const inviteUrl = new URL("auth/confirm", appBaseUrl);
-    inviteUrl.searchParams.set("token_hash", authLink.properties.hashed_token);
-    inviteUrl.searchParams.set("type", "magiclink");
-    inviteUrl.searchParams.set("next", invitePath);
-    return { inviteUrl: inviteUrl.toString(), role: "editor" as const, invitedBy: access.accessRole, expiresAt: expiresAt.toISOString() };
+    const inviteUrl = new URL(invitePath, appBaseUrl);
+    return {
+      inviteUrl: inviteUrl.toString(),
+      tempPassword,
+      role: "editor" as const,
+      invitedBy: access.accessRole,
+      expiresAt: expiresAt.toISOString(),
+    };
   })
 );

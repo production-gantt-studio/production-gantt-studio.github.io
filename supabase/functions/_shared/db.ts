@@ -104,20 +104,34 @@ export async function ensureOrganizationForOwner(ownerId: string) {
  * no-op if the account already exists (idempotent — re-inviting the same
  * address must not error).
  */
-export async function ensureAuthUserForEmail(email: string): Promise<void> {
+function randomTempPassword(): string {
+  const bytes = crypto.getRandomValues(new Uint8Array(12));
+  return Array.from(bytes, (b) => b.toString(36).padStart(2, "0")).join("").slice(0, 16);
+}
+
+/**
+ * Ensures a login account exists for the invited email and always gives it a
+ * fresh, random password — including on a re-invite, so the invite text the
+ * admin just generated always matches a working password. No email is sent
+ * by this step; the invite link/password are shared via the app's own
+ * copy/mailto flow.
+ */
+export async function ensureAuthUserForEmail(email: string): Promise<string> {
   const supabase = createServiceRoleClient();
-  const { error } = await supabase.auth.admin.createUser({
-    email,
-    email_confirm: true, // no confirmation email; the OTP login link is the only auth email sent
-  });
+  const password = randomTempPassword();
+  const { error } = await supabase.auth.admin.createUser({ email, email_confirm: true, password });
   if (error) {
-    // "already been registered" (or equivalent) is the expected, benign case
-    // for a re-invite / an email that signed up some other way already.
     const alreadyExists = /already|exists|registered/i.test(error.message ?? "");
     if (!alreadyExists) {
       throw new AppError(500, "招待先のログイン用アカウントを準備できませんでした。");
     }
+    const { data: existingUser } = await supabase.auth.admin.listUsers();
+    const match = existingUser?.users.find((u) => u.email?.toLowerCase() === email);
+    if (!match) throw new AppError(500, "招待先のログイン用アカウントを準備できませんでした。");
+    const { error: updateError } = await supabase.auth.admin.updateUserById(match.id, { password });
+    if (updateError) throw new AppError(500, "招待先のパスワードを設定できませんでした。");
   }
+  return password;
 }
 
 export async function ensureOrganizationMember(organizationId: string, userId: string) {

@@ -157,7 +157,7 @@ export type SharePreviewResult = { project: ClientProject; expiresAt: string } |
 
 export type CreateProjectResult = { publicId: string };
 export type SimpleSuccessResult = { success: true };
-export type CreateInviteResult = { inviteUrl: string; role: "editor" | "viewer"; invitedBy: ProjectAccessRole; expiresAt: string };
+export type CreateInviteResult = { inviteUrl: string; tempPassword: string; role: "editor" | "viewer"; invitedBy: ProjectAccessRole; expiresAt: string };
 export type AcceptInviteResult = { publicId: string; role: "editor" | "viewer" };
 export type CreateShareResult = { shareUrl: string; expiresAt: string };
 // create-forwarded-share-link returns a relative path (not an absolute URL —
