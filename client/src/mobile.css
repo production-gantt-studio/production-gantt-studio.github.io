@@ -64,8 +64,8 @@
 
   .pgm-icon-button {
     display: grid;
-    width: 36px;
-    height: 36px;
+    width: 38px;
+    height: 38px;
     flex: 0 0 auto;
     align-items: center;
     justify-items: center;
@@ -92,7 +92,8 @@
     align-items: center;
     gap: 6px;
     margin: 0;
-    padding: 8px 12px;
+    padding: 9px 12px;
+    border-top: 1px solid rgba(255, 255, 255, 0.11);
     border-bottom: 1px solid #344049;
     color: #b8c4c8;
     background: #202a31;
@@ -249,7 +250,7 @@
 
   .pgm-chips button {
     display: inline-flex;
-    min-height: 38px;
+    min-height: 40px;
     flex: 0 0 auto;
     align-items: center;
     gap: 5px;

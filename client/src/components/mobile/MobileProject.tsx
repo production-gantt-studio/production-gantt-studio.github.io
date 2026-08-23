@@ -147,9 +147,12 @@ export default function MobileProject({
   return (
     <div className="pgm-shell">
       <header className="pgm-topbar">
-        <button className="pgm-icon-button" aria-label="案件一覧へ戻る" onClick={onBack}>
-          <ChevronLeft size={20} />
-        </button>
+        {/* 共有リンクで見ている人には案件一覧が無い。戻る先が無いので出さない。 */}
+        {!readOnly && (
+          <button className="pgm-icon-button" aria-label="案件一覧へ戻る" onClick={onBack}>
+            <ChevronLeft size={20} />
+          </button>
+        )}
         <div className="pgm-topbar-title">
           <span>{project.client}</span>
           <strong>{project.title}</strong>
