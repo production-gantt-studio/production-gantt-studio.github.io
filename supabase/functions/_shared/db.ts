@@ -125,8 +125,12 @@ export async function ensureAuthUserForEmail(email: string): Promise<string> {
     if (!alreadyExists) {
       throw new AppError(500, "招待先のログイン用アカウントを準備できませんでした。");
     }
-    const { data: existingUser } = await supabase.auth.admin.listUsers();
-    const match = existingUser?.users.find((u) => u.email?.toLowerCase() === email);
+    let match: { id: string } | undefined;
+    for (let page = 1; page <= 20 && !match; page++) {
+      const { data } = await supabase.auth.admin.listUsers({ page, perPage: 200 });
+      if (!data?.users.length) break;
+      match = data.users.find((u) => u.email?.toLowerCase() === email);
+    }
     if (!match) throw new AppError(500, "招待先のログイン用アカウントを準備できませんでした。");
     const { error: updateError } = await supabase.auth.admin.updateUserById(match.id, { password });
     if (updateError) throw new AppError(500, "招待先のパスワードを設定できませんでした。");
