@@ -621,3 +621,10 @@
   .timeline-card .status-pill { flex: 0 0 auto; min-width: 0; padding: 4px 7px; font-size: 9px; }
   .timeline-card .task-inline-quick-fields { width: calc(100% - 40px); max-width: none; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
 }
+
+/* 「クライアント確認中」のような長い状態名がタスク名を押し潰すため、狭い幅では
+   バッジ幅を頭打ちにする。状態は同じ行の下にあるセレクトでも読めるので、
+   ここは色と先頭数文字が分かれば足りる。 */
+@media (max-width: 760px) {
+  .timeline-card .status-pill { max-width: 92px; overflow: hidden; white-space: nowrap; }
+}
