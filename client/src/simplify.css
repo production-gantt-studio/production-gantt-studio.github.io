@@ -605,33 +605,6 @@
 /* タスク左端のグリップは、同一フェーズ内のドラッグ並び替え専用。 */
 .drag-handle { cursor: grab !important; touch-action: none; }.drag-handle:active { cursor: grabbing !important; }.task-row.is-dragging { opacity: .48; }.task-row:has(.drag-handle:hover) { background: #f5f9fc; }
 
-/* ── スマホ幅のタスク欄 ─────────────────────────────────────────
-   タスク欄の幅は最小260px。そこへドラッグ・名前・詳細タスク追加・詳細設定・
-   重要フラグ・状態バッジを横一列に詰めると、タスク名が50px程度まで潰れて
-   「イベント」のように途中で切れてしまう。狭い幅では、タスク一覧側でなくても
-   出来る操作（詳細タスクの追加・重要フラグ）を隠し、その分をタスク名に回す。
-   どちらもタスクを開けば同じ操作ができる。行の高さはガントの各レーンと1対1で
-   揃える必要があるため変更しない。 */
-@media (max-width: 760px) {
-  .timeline-card .task-row { padding-right: 8px; gap: 5px; }
-  .timeline-card .task-row .add-subtask-button,
-  .timeline-card .task-row .inline-important-button { display: none; }
-  .timeline-card .task-title { flex: 1 1 auto; min-width: 0; }
-  .timeline-card .task-more-button { flex: 0 0 auto; width: 24px; }
-  .timeline-card .status-pill { flex: 0 0 auto; min-width: 0; padding: 4px 7px; font-size: 9px; }
-  .timeline-card .task-inline-quick-fields { width: calc(100% - 40px); max-width: none; grid-template-columns: minmax(0, 1.3fr) minmax(0, 1fr); }
-}
-
-/* 「クライアント確認中」のような長い状態名がタスク名を押し潰すため、狭い幅では
-   バッジ幅を頭打ちにする。状態は同じ行の下にあるセレクトでも読めるので、
-   ここは色と先頭数文字が分かれば足りる。 */
-@media (max-width: 760px) {
-  .timeline-card .status-pill { max-width: 92px; overflow: hidden; white-space: nowrap; }
-}
-
-/* 狭い幅では「日程・詳細」のラベルを外してアイコンだけにする。ここで約85px
-   空き、タスク名がその分読めるようになる（押した先の画面は変わらない）。 */
-@media (max-width: 760px) {
-  .timeline-card .task-more-button { min-width: 26px; padding: 0 4px !important; }
-  .timeline-card .task-more-button::after { content: none; }
-}
+/* スマホ幅（760px以下）の案件画面は client/src/mobile.css の専用画面に置き換えた。
+   ここにあった応急処置（タスク名の潰れ対策・ガントの開閉トグル）は、その画面が
+   PCの2列レイアウトを使わなくなったため不要になり、削除している。 */

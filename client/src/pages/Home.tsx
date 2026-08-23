@@ -4,6 +4,10 @@
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useAuth } from "@/_core/hooks/useAuth";
+import { useNarrowViewport } from "@/hooks/useNarrowViewport";
+import MobileProject from "@/components/mobile/MobileProject";
+import type { Member, Milestone, Phase, PhaseDefinition, ProjectData, Status, Task } from "@/lib/projectTypes";
+import { statusMeta, statusOptions } from "@/lib/projectTypes";
 import { trpc } from "@/lib/trpc";
 import { getProjectAccessPresentation } from "@/lib/accessControl";
 import { toAppUrl } from "@/lib/appUrl";
@@ -61,61 +65,6 @@ import {
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
-type Phase = string;
-type Status = "未着手" | "進行中" | "クライアント確認中" | "修正中" | "完了";
-
-type Task = {
-  id: string;
-  phase: Phase;
-  name: string;
-  start: string;
-  end: string;
-  status: Status;
-  assignee: string;
-  dependencies: string[];
-  note?: string;
-  isImportant?: boolean;
-  isUnscheduled?: boolean;
-  parentId?: string | null;
-};
-
-type ProjectData = {
-  title: string;
-  client: string;
-  tasks: Task[];
-  phases: PhaseDefinition[];
-  phaseNames?: Record<string, string>;
-  members: Member[];
-  milestones: Milestone[];
-  collapsedTaskIds: string[];
-  collapsedPhaseIds?: string[];
-  registeredMonth?: string;
-  eventMonth?: string;
-  taskDateFormat?: TaskDateFormat;
-  importantCleanupVersion?: number;
-  milestoneCleanupVersion?: number;
-  handoffs?: HandoffRecord[];
-  updatedAt: string;
-};
-
-type PhaseDefinition = {
-  id: Phase;
-  name: string;
-  className: string;
-};
-
-type Member = {
-  id: string;
-  name: string;
-  role: string;
-};
-
-type Milestone = {
-  id: string;
-  title: string;
-  date: string;
-};
-
 const DAY_WIDTH = 34;
 const STORAGE_KEY = "production-gantt-studio-v1";
 const PROJECTS_STORAGE_KEY = "production-gantt-studio-projects-v1";
@@ -153,16 +102,6 @@ const initialMembers: Member[] = [
 
 const initialMilestones: Milestone[] = [];
 const legacyDefaultMilestoneIds = new Set(["ms-client-review", "ms-shoot"]);
-
-const statusMeta: Record<Status, { tone: string; dot: string }> = {
-  未着手: { tone: "status-not-started", dot: "#8a95a5" },
-  進行中: { tone: "status-active", dot: "#3976c7" },
-  クライアント確認中: { tone: "status-review", dot: "#b77916" },
-  修正中: { tone: "status-revision", dot: "#3976c7" },
-  完了: { tone: "status-done", dot: "#287a5e" },
-};
-
-const statusOptions: Status[] = ["未着手", "進行中", "クライアント確認中", "修正中", "完了"];
 
 const initialTasks: Task[] = [
   { id: "t1", phase: "pre", name: "企画骨子", start: "2026-08-17", end: "2026-08-19", status: "完了", assignee: "佐藤 佑介", dependencies: [] },
@@ -483,6 +422,8 @@ export default function Home() {
   // nonce cookie and must run only at the moment of navigation.
   const { isAuthenticated, user } = useAuth();
 
+  // 760px以下は専用のスマホ画面に差し替える。それより広い画面はこれまでのまま。
+  const isNarrow = useNarrowViewport();
   const [, setLocation] = useLocation();
   const shareToken = new URLSearchParams(window.location.search).get("share");
   const sharedView = Boolean(shareToken);
@@ -931,6 +872,24 @@ export default function Home() {
     setShowInspector(true);
   };
 
+  // 削除はPCの詳細パネルとスマホのタスク詳細で同じ手順を使う。配下タスクは
+  // 消さずに最上位へ移し、この工程を指していた依存も外す。
+  const deleteTask = (id: string) => {
+    if (readOnly) return;
+    setProject((current) => ({
+      ...current,
+      tasks: current.tasks
+        .filter((task) => task.id !== id)
+        .map((task) => ({
+          ...task,
+          parentId: task.parentId === id ? null : task.parentId,
+          dependencies: task.dependencies.filter((dependencyId) => dependencyId !== id),
+        })),
+    }));
+    setShowInspector(false);
+    toast.success("タスクを削除しました。配下タスクは最上位へ移しました");
+  };
+
   const extendDailyTimeline = () => {
     setDayRangeDays((current) => Math.min(dailyRangeLimit, current + VIEW_DAYS));
   };
@@ -1320,7 +1279,8 @@ export default function Home() {
   }
 
   return (
-    <div className={`studio-shell ${readOnly ? "shared-project-shell" : ""}`}>
+    <div className={`studio-shell ${isNarrow ? "is-mobile-shell" : ""} ${readOnly ? "shared-project-shell" : ""}`}>
+      {!isNarrow && (
       <aside className="studio-sidebar no-print">
         <div className="brand-lockup">
           <span className="brand-mark" role="img" aria-label="Production Gantt Studio">PG</span>
@@ -1359,7 +1319,34 @@ export default function Home() {
           </button>
         </div>
       </aside>
+      )}
 
+      {isNarrow ? (
+        <MobileProject
+          project={project}
+          tasks={tasks}
+          phases={phases}
+          assignees={assignees}
+          today={TODAY}
+          readOnly={readOnly}
+          progress={projectProgress}
+          selectedTask={selectedTask}
+          isSheetOpen={showInspector}
+          myAssignee={myTasksAssignee}
+          phaseName={phaseName}
+          phaseClass={phaseClass}
+          onChangeMyAssignee={setMyTasksAssignee}
+          onOpenTask={openTask}
+          onCloseTask={() => setShowInspector(false)}
+          onUpdateTask={updateTask}
+          onMoveTaskStart={moveTaskWithDependencies}
+          onDeleteTask={deleteTask}
+          onAddTask={() => addTask()}
+          onOpenSettings={() => setWorkspacePanel("project")}
+          onOpenHelp={() => setShowShortcuts(true)}
+          onBack={() => setLocation("/")}
+        />
+      ) : (
       <main className="studio-main">
         {readOnly && <div className="shared-banner"><Eye size={15} />外部共有ビュー：このURLには「{project.title}」のみが含まれます。他プロジェクト、設定、編集機能は表示されません。</div>}
         {blankPreview && <div className="shared-banner"><Eye size={15} />新規案件画面のプレビューです。このURLではデータを保存しません。</div>}
@@ -1474,6 +1461,7 @@ export default function Home() {
         )}
 
       </main>
+      )}
 
       <section ref={pdfExportRef} className="pdf-export-sheet" aria-hidden="true">
         <header><div><span>PRODUCTION GANTT STUDIO / CLIENT SCHEDULE</span><h1>{project.title}</h1><p>{project.client} · {formatMonthDay(timelineStartDate)} — {formatMonthDay(timelineEndDate)}</p></div><strong>{pdfScopeLabel}</strong></header>
@@ -1482,7 +1470,7 @@ export default function Home() {
         <footer><span>赤いバー：重要タスク</span><span>Generated by Production Gantt Studio</span></footer>
       </section>
 
-      {showInspector && selectedTask && (
+      {!isNarrow && showInspector && selectedTask && (
         <aside className="inspector no-print" aria-label="タスク詳細">
           <div className="inspector-top"><div><span>TASK INSPECTOR</span><strong>{phaseName(selectedTask.phase)}</strong></div><button className="icon-button" aria-label="閉じる" onClick={() => setShowInspector(false)}><X size={18} /></button></div>
           <div className="inspector-task-title"><input value={selectedTask.name} disabled={readOnly} onChange={(event) => updateTask(selectedTask.id, { name: event.target.value })} /><span className={`status-pill ${statusMeta[selectedTask.status].tone}`}><i />{selectedTask.status}</span></div>
@@ -1504,7 +1492,7 @@ export default function Home() {
           </div>
           <div className="dependency-panel"><span>DEPENDENCY</span>{selectedTask.dependencies.length ? selectedTask.dependencies.map((id) => { const task = tasks.find((item) => item.id === id); return <p key={id}><span className="dependency-line" />{task?.name} の完了後に開始</p>; }) : <p>前工程への依存はありません。</p>}</div>
           {!readOnly && !selectedTask.parentId && <button className="inspector-subtask-button" onClick={() => addSubtask(selectedTask.id)}><Plus size={15} />このタスクに詳細タスクを追加</button>}
-          {!readOnly && <button className="delete-button" onClick={() => { setProject((current) => ({ ...current, tasks: current.tasks.filter((task) => task.id !== selectedTask.id).map((task) => ({ ...task, parentId: task.parentId === selectedTask.id ? null : task.parentId, dependencies: task.dependencies.filter((id) => id !== selectedTask.id) })) })); setShowInspector(false); toast.success("タスクを削除しました。配下タスクは最上位へ移しました"); }}>このタスクを削除</button>}
+          {!readOnly && <button className="delete-button" onClick={() => deleteTask(selectedTask.id)}>このタスクを削除</button>}
         </aside>
       )}
 

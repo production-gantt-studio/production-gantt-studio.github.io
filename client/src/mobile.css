@@ -1,0 +1,1094 @@
+/* ══════════════════════════════════════════════════════════════════════════
+   スマホ幅（760px以下）の案件画面。
+   このファイルの中身はすべて @media (max-width: 760px) の内側に置く。
+   761px以上の表示には1ルールも効かせない＝PCの見た目は変えない。
+
+   ガントの位置決めの約束：
+   目盛り（.pgm-scale）・帯（.pgm-track）・今日の線と目盛り線（.pgm-rows）は、
+   すべて .pgm-plot の内側で同じ左右パディングの箱に置き、幅100%を共有する。
+   その上で位置はすべて「日数の割合(%)」で指定する。px を混ぜたり、片方だけ
+   別の箱に入れたりすると、目盛りと帯がズレる。
+   ══════════════════════════════════════════════════════════════════════════ */
+
+@media (max-width: 760px) {
+  .studio-shell.is-mobile-shell {
+    display: block;
+    min-height: 100vh;
+    background: var(--studio-bg);
+  }
+
+  .pgm-shell {
+    display: flex;
+    min-height: 100vh;
+    flex-direction: column;
+    background: var(--studio-bg);
+  }
+
+  /* ── 上部バー ─────────────────────────────────────────────── */
+  .pgm-topbar {
+    position: sticky;
+    z-index: 12;
+    top: 0;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    min-height: 54px;
+    padding: 8px 10px;
+    background: var(--sidebar-bg);
+  }
+
+  .pgm-topbar-title {
+    min-width: 0;
+    flex: 1;
+    display: grid;
+    gap: 1px;
+  }
+
+  .pgm-topbar-title span {
+    overflow: hidden;
+    color: #90a0a8;
+    font: 700 9px "Space Grotesk", "Noto Sans JP", sans-serif;
+    letter-spacing: 0.1em;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pgm-topbar-title strong {
+    overflow: hidden;
+    color: #fff;
+    font-size: 14px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pgm-icon-button {
+    display: grid;
+    width: 36px;
+    height: 36px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-items: center;
+    border: 1px solid var(--hairline);
+    color: var(--muted-ink);
+    background: var(--surface);
+    cursor: pointer;
+  }
+
+  .pgm-topbar .pgm-icon-button {
+    border-color: rgba(255, 255, 255, 0.16);
+    color: #dbe3e6;
+    background: rgba(255, 255, 255, 0.08);
+  }
+
+  .pgm-topbar .pgm-icon-button.is-signal {
+    border-color: var(--signal);
+    color: var(--signal-ink);
+    background: var(--signal);
+  }
+
+  .pgm-shared-banner {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 8px 12px;
+    border-bottom: 1px solid #344049;
+    color: #b8c4c8;
+    background: #202a31;
+    font-size: 11px;
+    line-height: 1.5;
+  }
+
+  .pgm-shared-banner svg { flex: 0 0 auto; }
+
+  .pgm-main {
+    flex: 1;
+    padding: 12px 12px 84px;
+  }
+
+  /* ── 案件トップ：サマリー ─────────────────────────────────── */
+  .pgm-summary {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+    padding: 13px;
+    border: 1px solid var(--hairline);
+    background: var(--surface);
+  }
+
+  .pgm-summary-progress {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 11px;
+  }
+
+  .pgm-ring {
+    --progress: 0deg;
+    position: relative;
+    display: grid;
+    width: 46px;
+    height: 46px;
+    flex: 0 0 auto;
+    align-items: center;
+    justify-items: center;
+    border-radius: 50%;
+    background: conic-gradient(#85989f var(--progress), var(--hairline) 0);
+  }
+
+  .pgm-ring::after {
+    position: absolute;
+    background: var(--surface);
+    border-radius: 50%;
+    content: "";
+    inset: 5px;
+  }
+
+  .pgm-ring span {
+    z-index: 1;
+    color: var(--ink);
+    font: 700 13px "Space Grotesk", sans-serif;
+  }
+
+  .pgm-ring small { font-size: 8px; }
+
+  .pgm-summary p {
+    margin: 0 0 3px;
+    color: var(--muted-ink);
+    font: 700 9px "Space Grotesk", "Noto Sans JP", sans-serif;
+    letter-spacing: 0.1em;
+  }
+
+  .pgm-summary-progress strong {
+    display: block;
+    color: var(--ink);
+    font-size: 12px;
+  }
+
+  .pgm-summary-late {
+    display: grid;
+    align-content: center;
+    justify-items: end;
+    padding-left: 12px;
+    border-left: 1px solid var(--hairline);
+    text-align: right;
+  }
+
+  .pgm-summary-late p {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pgm-summary-late strong {
+    color: var(--muted-ink);
+    font: 700 19px/1 "Space Grotesk", sans-serif;
+  }
+
+  .pgm-summary-late.is-late p,
+  .pgm-summary-late.is-late strong { color: var(--state-danger); }
+
+  .pgm-summary-next {
+    display: grid;
+    width: 100%;
+    grid-column: 1 / -1;
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    gap: 2px 8px;
+    padding: 10px 11px;
+    border: 1px solid var(--hairline);
+    background: var(--surface-quiet);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .pgm-summary-next p { grid-column: 1; }
+
+  .pgm-summary-next strong {
+    overflow: hidden;
+    grid-column: 1;
+    color: var(--ink);
+    font-size: 14px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pgm-summary-next span {
+    grid-column: 1;
+    color: var(--muted-ink);
+    font-size: 11px;
+  }
+
+  .pgm-summary-next svg {
+    grid-row: 1 / 4;
+    grid-column: 2;
+    color: var(--muted-ink);
+  }
+
+  .pgm-summary-empty {
+    grid-column: 1 / -1;
+    margin: 0;
+    padding: 9px 11px;
+    border: 1px solid var(--hairline);
+    color: var(--muted-ink);
+    background: var(--surface-quiet);
+    font-size: 11px;
+  }
+
+  /* ── 案件トップ：絞り込みチップ ───────────────────────────── */
+  .pgm-chips {
+    display: flex;
+    gap: 5px;
+    margin-top: 10px;
+    overflow-x: auto;
+    scrollbar-width: none;
+  }
+
+  .pgm-chips::-webkit-scrollbar { display: none; }
+
+  .pgm-chips button {
+    display: inline-flex;
+    min-height: 38px;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 5px;
+    padding: 0 9px;
+    border: 1px solid var(--hairline);
+    color: var(--ink);
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .pgm-chips button b {
+    color: var(--muted-ink);
+    font: 700 10px "Space Grotesk", sans-serif;
+  }
+
+  .pgm-chips button.is-active {
+    border-color: var(--ink);
+    color: #fff;
+    background: var(--ink);
+  }
+
+  .pgm-chips button.is-active b { color: rgba(255, 255, 255, 0.72); }
+
+  .pgm-mine-select {
+    display: flex;
+    min-height: 42px;
+    align-items: center;
+    gap: 8px;
+    margin-top: 8px;
+    padding: 0 11px;
+    border: 1px solid var(--hairline);
+    background: var(--surface);
+  }
+
+  .pgm-mine-select span {
+    flex: 0 0 auto;
+    color: var(--muted-ink);
+    font-size: 11px;
+    font-weight: 700;
+  }
+
+  .pgm-mine-select select {
+    min-width: 0;
+    flex: 1;
+    border: 0;
+    color: var(--ink);
+    background: transparent;
+    font-size: 14px;
+    font-weight: 700;
+    outline: 0;
+  }
+
+  /* ── 案件トップ：タスクカード ─────────────────────────────── */
+  .pgm-cards {
+    display: grid;
+    gap: 8px;
+    margin-top: 10px;
+  }
+
+  .pgm-card {
+    display: grid;
+    width: 100%;
+    gap: 7px;
+    padding: 12px;
+    border: 1px solid var(--hairline);
+    background: var(--surface);
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .pgm-card.is-late { box-shadow: inset 3px 0 0 var(--state-danger); }
+  .pgm-card.is-important { border-color: color-mix(in srgb, var(--state-danger) 40%, var(--hairline)); }
+
+  .pgm-card-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .pgm-card-phase {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+    color: var(--muted-ink);
+    font-size: 10px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pgm-dot {
+    display: inline-block;
+    width: 7px;
+    height: 7px;
+    flex: 0 0 auto;
+    border-radius: 50%;
+    background: #9aa6ab;
+  }
+
+  .pgm-dot.phase-pre { background: var(--pre); }
+  .pgm-dot.phase-production { background: var(--production); }
+  .pgm-dot.phase-post { background: var(--post); }
+  .pgm-dot.phase-cyan { background: #6fc7c0; }
+  .pgm-dot.phase-rose { background: #e08fa6; }
+  .pgm-dot.phase-slate { background: #9aa6ab; }
+
+  .pgm-status {
+    display: inline-flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 7px;
+    font-size: 10px;
+    font-weight: 700;
+    white-space: nowrap;
+  }
+
+  .pgm-status i {
+    width: 5px;
+    height: 5px;
+    border-radius: 50%;
+    background: currentColor;
+  }
+
+  .pgm-card-name {
+    color: var(--ink);
+    font-size: 14px;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  .pgm-card-name em {
+    margin-right: 4px;
+    color: var(--muted-ink);
+    font-style: normal;
+  }
+
+  .pgm-card-name svg {
+    margin-right: 4px;
+    color: var(--state-danger);
+    vertical-align: -1px;
+  }
+
+  .pgm-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 4px 12px;
+    color: var(--muted-ink);
+    font-size: 11px;
+  }
+
+  .pgm-card-meta > span {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+  }
+
+  .pgm-card-late {
+    padding: 2px 6px;
+    color: #fff;
+    background: var(--state-danger);
+    font: 800 9px "Noto Sans JP", sans-serif;
+  }
+
+  /* ── 案件全体の中の位置（細い帯） ─────────────────────────── */
+  .pgm-band {
+    position: relative;
+    display: block;
+    height: 6px;
+    overflow: hidden;
+    background: var(--grid-line);
+  }
+
+  .pgm-band-fill {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    min-width: 3px;
+    background: #8a959c;
+  }
+
+  .pgm-band-today {
+    position: absolute;
+    z-index: 1;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--ink);
+    opacity: 0.5;
+  }
+
+  /* ── ガント ───────────────────────────────────────────────── */
+  .pgm-gantt-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+  }
+
+  .pgm-seg {
+    display: inline-flex;
+    border: 1px solid var(--hairline);
+    background: var(--surface);
+  }
+
+  .pgm-seg button {
+    min-height: 38px;
+    padding: 0 18px;
+    color: var(--muted-ink);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .pgm-seg button[aria-pressed="true"] {
+    color: #fff;
+    background: var(--ink);
+  }
+
+  .pgm-chip {
+    min-height: 38px;
+    padding: 0 13px;
+    border: 1px solid var(--hairline);
+    color: var(--ink);
+    background: var(--surface);
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .pgm-chip.is-active {
+    border-color: var(--state-danger);
+    color: #fff;
+    background: var(--state-danger);
+  }
+
+  .pgm-gantt-range {
+    margin: 10px 0 0;
+    color: var(--muted-ink);
+    font: 700 11px "Space Grotesk", "Noto Sans JP", sans-serif;
+  }
+
+  /* 目盛り・帯・今日の線が共有する箱。左右のパディングはここだけで決める。 */
+  .pgm-plot {
+    margin-top: 7px;
+    padding: 10px 14px 6px;
+    border: 1px solid var(--hairline);
+    background: var(--surface);
+  }
+
+  /* 上段＝今日の札、下段＝日付。高さを分けて、札が日付を隠さないようにする。 */
+  .pgm-scale {
+    position: relative;
+    height: 46px;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .pgm-tick {
+    position: absolute;
+    bottom: 3px;
+    display: grid;
+    justify-items: center;
+    color: var(--muted-ink);
+    font-family: "Space Grotesk", "Noto Sans JP", sans-serif;
+    line-height: 1.15;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .pgm-tick.is-first { justify-items: start; transform: translateX(0); }
+  .pgm-tick.is-last { justify-items: end; transform: translateX(-100%); }
+  .pgm-tick b { font-size: 10px; font-weight: 700; }
+  .pgm-tick small { font-size: 8px; }
+
+  .pgm-scale-today {
+    position: absolute;
+    top: 0;
+    padding: 2px 5px;
+    color: #fff;
+    background: var(--ink);
+    font: 700 9px "Space Grotesk", "Noto Sans JP", sans-serif;
+    transform: translateX(-50%);
+    white-space: nowrap;
+  }
+
+  .pgm-rows { position: relative; }
+
+  .pgm-grid-line {
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 1px;
+    background: var(--grid-line);
+    pointer-events: none;
+  }
+
+  .pgm-today-line {
+    position: absolute;
+    z-index: 2;
+    top: 0;
+    bottom: 0;
+    width: 2px;
+    margin-left: -1px;
+    background: var(--ink);
+    opacity: 0.55;
+    pointer-events: none;
+  }
+
+  .pgm-row {
+    position: relative;
+    z-index: 1;
+    display: grid;
+    width: 100%;
+    gap: 4px;
+    padding: 8px 0 9px;
+    border-bottom: 1px solid var(--grid-line);
+    background: transparent;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .pgm-row:last-child { border-bottom: 0; }
+
+  .pgm-row-name {
+    display: flex;
+    min-width: 0;
+    align-items: center;
+    gap: 5px;
+    overflow: hidden;
+    color: var(--ink);
+    font-size: 12px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pgm-row-name svg { flex: 0 0 auto; color: var(--state-danger); }
+
+  .pgm-track {
+    position: relative;
+    display: block;
+    height: 15px;
+    background: color-mix(in srgb, var(--grid-line) 55%, transparent);
+  }
+
+  .pgm-bar {
+    position: absolute;
+    top: 2px;
+    bottom: 2px;
+    min-width: 3px;
+    background: #8a959c;
+  }
+
+  .pgm-mark {
+    position: absolute;
+    top: 50%;
+    width: 0;
+    height: 0;
+    margin-top: -5px;
+    border-right: 6px solid transparent;
+    border-bottom: 10px solid #8a959c;
+    border-left: 6px solid transparent;
+    transform: translateX(-50%);
+  }
+
+  /* 面で塗る色は状態ごとに1つ。重要タスクは赤で最優先。 */
+  .pgm-bar.pgm-tone-progress,
+  .pgm-band-fill.pgm-tone-progress { background: var(--state-progress); }
+  .pgm-bar.pgm-tone-review,
+  .pgm-band-fill.pgm-tone-review { background: var(--state-review); }
+  .pgm-bar.pgm-tone-done,
+  .pgm-band-fill.pgm-tone-done { background: var(--state-done); }
+  .pgm-bar.pgm-tone-danger,
+  .pgm-band-fill.pgm-tone-danger { background: var(--state-danger); }
+
+  .pgm-mark.pgm-tone-progress { border-bottom-color: var(--state-progress); }
+  .pgm-mark.pgm-tone-review { border-bottom-color: var(--state-review); }
+  .pgm-mark.pgm-tone-done { border-bottom-color: var(--state-done); }
+  .pgm-mark.pgm-tone-danger { border-bottom-color: var(--state-danger); }
+
+  .pgm-tbc {
+    margin-top: 9px;
+    padding: 11px 12px;
+    border: 1px solid var(--hairline);
+    background: var(--surface);
+  }
+
+  .pgm-tbc-label {
+    display: block;
+    margin-bottom: 8px;
+    color: var(--muted-ink);
+    font: 700 10px "Space Grotesk", "Noto Sans JP", sans-serif;
+    letter-spacing: 0.08em;
+  }
+
+  .pgm-tbc > div {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .pgm-tbc button {
+    display: inline-flex;
+    min-height: 36px;
+    max-width: 100%;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    padding: 0 10px;
+    border: 1px dashed var(--hairline);
+    color: var(--ink);
+    background: var(--surface-quiet);
+    font-size: 12px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    cursor: pointer;
+  }
+
+  .pgm-gantt-note {
+    margin: 10px 0 0;
+    color: var(--muted-ink);
+    font-size: 10.5px;
+    line-height: 1.7;
+  }
+
+  .pgm-empty {
+    margin: 0;
+    padding: 26px 12px;
+    color: var(--muted-ink);
+    font-size: 12px;
+    text-align: center;
+  }
+
+  .pgm-zero {
+    display: grid;
+    gap: 9px;
+    padding: 30px 20px;
+    border: 1px solid var(--hairline);
+    background: var(--surface);
+    text-align: center;
+  }
+
+  .pgm-zero p {
+    margin: 0;
+    color: var(--ink);
+    font-size: 17px;
+    font-weight: 700;
+  }
+
+  .pgm-zero span {
+    color: var(--muted-ink);
+    font-size: 12px;
+    line-height: 1.75;
+  }
+
+  .pgm-zero .pgm-primary-button {
+    margin-top: 6px;
+    flex: none;
+  }
+
+  /* ── 下部のタブ ───────────────────────────────────────────── */
+  .pgm-tabs {
+    position: fixed;
+    z-index: 12;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    border-top: 1px solid var(--hairline);
+    background: var(--surface);
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  .pgm-tabs button {
+    display: flex;
+    min-height: 58px;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    gap: 3px;
+    color: var(--muted-ink);
+    background: transparent;
+    font-size: 11px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .pgm-tabs button.is-active {
+    color: var(--ink);
+    box-shadow: inset 0 2px 0 var(--ink);
+  }
+
+  /* ── タスク詳細（下から開くシート） ───────────────────────── */
+  .pgm-sheet-layer {
+    position: fixed;
+    z-index: 40;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    inset: 0;
+  }
+
+  .pgm-sheet-backdrop {
+    position: absolute;
+    border: 0;
+    background: rgba(18, 26, 32, 0.52);
+    cursor: pointer;
+    inset: 0;
+  }
+
+  .pgm-sheet {
+    position: relative;
+    display: flex;
+    max-height: 92vh;
+    flex-direction: column;
+    background: var(--surface);
+    box-shadow: 0 -14px 40px rgba(18, 28, 34, 0.28);
+    animation: pgm-sheet-up 0.22s cubic-bezier(0.23, 1, 0.32, 1);
+  }
+
+  .pgm-sheet-head {
+    flex: 0 0 auto;
+    padding: 8px 14px 13px;
+    border-bottom: 1px solid var(--hairline);
+  }
+
+  .pgm-sheet-grip {
+    display: block;
+    width: 38px;
+    height: 4px;
+    margin: 0 auto 10px;
+    border-radius: 99px;
+    background: var(--hairline);
+  }
+
+  .pgm-sheet-head-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 10px;
+  }
+
+  .pgm-sheet-phase {
+    display: inline-flex;
+    min-width: 0;
+    align-items: center;
+    gap: 6px;
+    overflow: hidden;
+    color: var(--muted-ink);
+    font-size: 11px;
+    font-weight: 700;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .pgm-sheet-title {
+    width: 100%;
+    margin-top: 10px;
+    padding: 4px 0;
+    border: 0;
+    border-bottom: 1px solid var(--hairline);
+    color: var(--ink);
+    background: transparent;
+    font: 700 18px/1.35 "Noto Sans JP", sans-serif;
+    outline: 0;
+  }
+
+  .pgm-sheet-title:focus { border-bottom-color: var(--ink); }
+  .pgm-sheet-title:disabled { border-bottom-color: transparent; opacity: 1; }
+
+  .pgm-sheet-body {
+    flex: 1;
+    padding: 14px;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+  }
+
+  .pgm-sheet-overview {
+    padding: 12px;
+    border: 1px solid var(--hairline);
+    background: var(--surface-quiet);
+  }
+
+  .pgm-overview-grid {
+    display: grid;
+    margin: 0;
+    grid-template-columns: 1fr 1fr;
+    gap: 11px;
+  }
+
+  .pgm-overview-grid dt {
+    color: var(--muted-ink);
+    font: 700 9px "Space Grotesk", "Noto Sans JP", sans-serif;
+    letter-spacing: 0.08em;
+  }
+
+  .pgm-overview-grid dd {
+    margin: 4px 0 0;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .pgm-overview-band { margin-top: 13px; }
+
+  .pgm-overview-band-label {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--muted-ink);
+    font: 700 9px "Space Grotesk", "Noto Sans JP", sans-serif;
+    letter-spacing: 0.08em;
+  }
+
+  .pgm-band-scale {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 4px;
+    color: var(--muted-ink);
+    font: 700 9px "Space Grotesk", sans-serif;
+  }
+
+  .pgm-neighbours {
+    display: grid;
+    margin-top: 13px;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+  }
+
+  .pgm-neighbours > div { min-width: 0; }
+
+  .pgm-neighbours span {
+    display: block;
+    margin-bottom: 5px;
+    color: var(--muted-ink);
+    font: 700 9px "Space Grotesk", "Noto Sans JP", sans-serif;
+    letter-spacing: 0.08em;
+  }
+
+  .pgm-neighbours button {
+    display: flex;
+    width: 100%;
+    min-height: 38px;
+    align-items: center;
+    justify-content: space-between;
+    gap: 5px;
+    overflow: hidden;
+    padding: 0 8px;
+    border: 1px solid var(--hairline);
+    color: var(--ink);
+    background: var(--surface);
+    font-size: 11.5px;
+    font-weight: 700;
+    text-align: left;
+    cursor: pointer;
+  }
+
+  .pgm-neighbours button + button { margin-top: 5px; }
+  .pgm-neighbours button svg { flex: 0 0 auto; color: var(--muted-ink); }
+
+  .pgm-neighbours p {
+    margin: 0;
+    color: var(--muted-ink);
+    font-size: 11px;
+  }
+
+  .pgm-sheet-fields { margin-top: 14px; }
+
+  .pgm-field {
+    display: grid;
+    margin-bottom: 13px;
+    gap: 6px;
+  }
+
+  .pgm-field-label {
+    color: var(--muted-ink);
+    font: 700 9px "Space Grotesk", "Noto Sans JP", sans-serif;
+    letter-spacing: 0.08em;
+  }
+
+  .pgm-field-pair {
+    display: grid;
+    margin-bottom: 13px;
+    grid-template-columns: 1fr 1fr;
+    gap: 9px;
+  }
+
+  .pgm-field-pair label {
+    display: grid;
+    gap: 6px;
+    color: var(--muted-ink);
+    font: 700 9px "Space Grotesk", "Noto Sans JP", sans-serif;
+    letter-spacing: 0.08em;
+  }
+
+  /* 16px 未満だと iOS が入力時に画面を勝手に拡大するため、必ず16px以上にする。 */
+  .pgm-sheet select,
+  .pgm-sheet input[type="date"],
+  .pgm-sheet textarea {
+    width: 100%;
+    min-height: 46px;
+    padding: 11px;
+    border: 1px solid var(--hairline);
+    border-radius: 0;
+    color: var(--ink);
+    background: var(--surface-quiet);
+    font: 500 16px "Noto Sans JP", sans-serif;
+    outline: 0;
+    -webkit-appearance: none;
+    appearance: none;
+  }
+
+  .pgm-sheet select {
+    background-image: linear-gradient(45deg, transparent 50%, var(--muted-ink) 50%), linear-gradient(135deg, var(--muted-ink) 50%, transparent 50%);
+    background-position: calc(100% - 17px) 21px, calc(100% - 12px) 21px;
+    background-size: 5px 5px, 5px 5px;
+    background-repeat: no-repeat;
+  }
+
+  .pgm-sheet textarea {
+    min-height: 92px;
+    line-height: 1.7;
+    resize: vertical;
+  }
+
+  .pgm-sheet select:disabled,
+  .pgm-sheet input:disabled,
+  .pgm-sheet textarea:disabled {
+    cursor: not-allowed;
+    opacity: 0.66;
+  }
+
+  .pgm-status-choice {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+  }
+
+  .pgm-status-choice button {
+    min-height: 42px;
+    padding: 0 12px;
+    border: 1px solid transparent;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .pgm-status-choice button.is-selected { box-shadow: inset 0 0 0 2px var(--ink); }
+  .pgm-status-choice button:disabled { cursor: not-allowed; opacity: 0.7; }
+
+  .pgm-check {
+    display: flex;
+    min-height: 50px;
+    align-items: center;
+    gap: 11px;
+    margin-bottom: 13px;
+    padding: 0 12px;
+    border: 1px solid var(--hairline);
+    background: var(--surface-quiet);
+    cursor: pointer;
+  }
+
+  .pgm-check input {
+    width: 20px;
+    height: 20px;
+    flex: 0 0 auto;
+    accent-color: var(--ink);
+  }
+
+  .pgm-check span {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    color: var(--ink);
+    font-size: 13px;
+    font-weight: 700;
+  }
+
+  .pgm-check svg { color: var(--muted-ink); }
+
+  .pgm-sheet-foot {
+    display: flex;
+    flex: 0 0 auto;
+    gap: 8px;
+    padding: 11px 14px;
+    padding-bottom: calc(11px + env(safe-area-inset-bottom));
+    border-top: 1px solid var(--hairline);
+    background: var(--surface);
+  }
+
+  .pgm-primary-button {
+    min-height: 50px;
+    flex: 1;
+    border: 1px solid var(--signal);
+    color: var(--signal-ink);
+    background: var(--signal);
+    font-size: 14px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .pgm-delete-button {
+    display: inline-flex;
+    min-height: 50px;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 6px;
+    padding: 0 15px;
+    border: 1px solid rgba(201, 35, 45, 0.35);
+    color: var(--state-danger);
+    background: transparent;
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .pgm-readonly-note {
+    margin: 0;
+    padding: 8px 0;
+    color: var(--muted-ink);
+    font-size: 12px;
+  }
+
+  @keyframes pgm-sheet-up {
+    from { transform: translateY(24px); opacity: 0; }
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* 端末の設定でアニメーションを切っている人には動かさない。 */
+  @media (prefers-reduced-motion: reduce) {
+    .pgm-sheet { animation: none; }
+  }
+}

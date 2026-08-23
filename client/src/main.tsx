@@ -8,6 +8,9 @@ import { createRoot } from "react-dom/client";
 import App from "./App";
 import "./index.css";
 import "./simplify.css";
+// スマホ幅（760px以下）専用。中身はすべてメディアクエリの内側なので、
+// PC表示には1ルールも効かない。
+import "./mobile.css";
 
 const queryClient = new QueryClient();
 

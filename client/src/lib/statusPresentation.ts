@@ -26,3 +26,17 @@ const compactStatusLabels: Record<TaskStatusLabel, string> = {
 export function getCompactStatusLabel(status: TaskStatusLabel) {
   return compactStatusLabels[status];
 }
+
+export type TaskTone = "idle" | "progress" | "review" | "done" | "danger";
+
+/**
+ * ガントの帯・カードの位置帯に塗る色。重要タスクは状態より優先して赤で出す。
+ * 状態バッジと違って面で塗るため、色を1つに決めてから使う。
+ */
+export function getTaskTone(status: string, isImportant?: boolean): TaskTone {
+  if (isImportant) return "danger";
+  if (status === "完了") return "done";
+  if (status === "クライアント確認中") return "review";
+  if (status === "進行中" || status === "修正中") return "progress";
+  return "idle";
+}
