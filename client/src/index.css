@@ -14,6 +14,18 @@
   --color-card-foreground: var(--card-foreground);
   --color-border: var(--border);
   --color-ring: var(--ring);
+  --color-popover: var(--popover);
+  --color-popover-foreground: var(--popover-foreground);
+  --color-accent: var(--accent);
+  --color-accent-foreground: var(--accent-foreground);
+  --color-primary: var(--primary);
+  --color-primary-foreground: var(--primary-foreground);
+  --color-secondary: var(--secondary);
+  --color-secondary-foreground: var(--secondary-foreground);
+  --color-muted: var(--muted);
+  --color-muted-foreground: var(--muted-foreground);
+  --color-destructive: var(--destructive);
+  --color-input: var(--input);
 }
 
 :root {
@@ -47,6 +59,23 @@
   --important-date-label-bg: #c91e2a;
   --important-date-label-text: #ffffff;
   --important-date-label-line: #8b1118;
+
+  /* shadcn/ui向けのエイリアス。実体は上のブランドトークンを流用し、
+     .darkでの上書きは不要(参照先のトークン自体がdark配下で上書きされるため)。
+     2026-08-23: DropdownMenu等のポップオーバー系コンポーネントが
+     このエイリアス欠落で透明(=表示崩れ)になっていたため追加。 */
+  --popover: var(--surface);
+  --popover-foreground: var(--ink);
+  --accent: var(--hairline);
+  --accent-foreground: var(--ink);
+  --primary: var(--signal);
+  --primary-foreground: var(--signal-ink);
+  --secondary: var(--surface-quiet);
+  --secondary-foreground: var(--ink);
+  --muted: var(--surface-quiet);
+  --muted-foreground: var(--muted-ink);
+  --destructive: var(--important-task);
+  --input: var(--hairline);
 }
 
 .dark {

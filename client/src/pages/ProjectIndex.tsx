@@ -333,7 +333,13 @@ export default function ProjectIndex() {
         return [];
       }
     });
-    if (synced.length) setProjects(ensureSampleProjects(synced));
+    // Supabase同期後の一覧は実案件だけを表示する。ensureSampleProjects()は
+    // ローカル未ログイン時の見本表示のためのもので、ここで使うと動画/イベント/
+    // グラフィックの「サンプル」案件が実案件と区別なく再注入され続けてしまう
+    // (2026-08-23 Riku実機報告: サンプルと実案件の二重表示)。
+    // 同期結果が0件(実案件なし)の場合も、ログイン前のローカル見本を残さず
+    // 空の一覧に置き換える。
+    setProjects(synced);
   }, [remoteProjectsQuery.data]);
   useEffect(() => {
     if (!isAuthenticated || !remoteArchivedProjectsQuery.data) return;
