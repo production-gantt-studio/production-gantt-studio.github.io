@@ -7,6 +7,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { trpc } from "@/lib/trpc";
 import { getProjectAccessPresentation } from "@/lib/accessControl";
 import { toAppUrl } from "@/lib/appUrl";
+import { isShareLinkUnusable } from "@/lib/shareLinkState";
 import { normalizeInlineName } from "@/lib/inlineEditing";
 import { insertItemAfter } from "@/lib/phaseEditing";
 import { selectPdfScopeTasks } from "@/lib/pdfScope";
@@ -1296,6 +1297,27 @@ export default function Home() {
 
     return () => cleanup.forEach((dispose) => dispose());
   }, [groups, readOnly, reorderTask, tasks]);
+
+  // A share URL must never fall back to whatever project happens to be in this
+  // browser's local storage. get-shared-project 404s for a revoked, expired or
+  // unknown token, and without this guard the studio still rendered — in
+  // read-only "外部共有ビュー" chrome — around the locally cached project, naming
+  // it as the shared one. Show the link's real state instead.
+  if (isShareLinkUnusable({
+    shareToken,
+    isError: remoteShareQuery.isError,
+    isSuccess: remoteShareQuery.isSuccess,
+    hasProject: Boolean(remoteShareQuery.data?.project),
+  })) {
+    return (
+      <div className="studio-shell shared-project-shell">
+        <main className="shared-link-invalid" role="alert">
+          <h1>この共有リンクは使えません</h1>
+          <p>リンクが取り消されたか、有効期限が切れています。案件の担当者に、新しい共有リンクの発行を依頼してください。</p>
+        </main>
+      </div>
+    );
+  }
 
   return (
     <div className={`studio-shell ${readOnly ? "shared-project-shell" : ""}`}>
