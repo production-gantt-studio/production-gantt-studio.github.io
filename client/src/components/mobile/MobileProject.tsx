@@ -3,7 +3,7 @@
  * タスク詳細は MobileTaskSheet を1つだけ使い、どちらの画面からも同じものを開く。
  * 目盛り・帯・今日の線は、左右同じ余白の箱の中で、すべて日数の割合(%)で置く。
  */
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   CalendarDays,
   CalendarRange,
@@ -42,7 +42,9 @@ import {
 } from "@/lib/mobileTimeline";
 import { getTaskTone } from "@/lib/statusPresentation";
 import { formatTaskDateRange } from "@/lib/taskDateDisplay";
+import { readTutorialSeen, shouldAutoStartTutorial } from "@/lib/mobileTutorial";
 import MobileTaskSheet from "./MobileTaskSheet";
+import MobileTutorial from "./MobileTutorial";
 
 type MobileProjectProps = {
   project: ProjectData;
@@ -97,6 +99,15 @@ export default function MobileProject({
   const [filter, setFilter] = useState<MobileTaskFilter>("all");
   const [ganttScope, setGanttScope] = useState<"all" | "week">("all");
   const [ganttLateOnly, setGanttLateOnly] = useState(false);
+  const [showTutorial, setShowTutorial] = useState(false);
+
+  // 初回だけ、自動で案内を出す。共有リンクの閲覧者や、タスクが0件の新規案件では出さない。
+  useEffect(() => {
+    if (shouldAutoStartTutorial({ seen: readTutorialSeen(window.localStorage), readOnly, taskCount: tasks.length })) {
+      setShowTutorial(true);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const dateFormat = project.taskDateFormat ?? "compact";
   const projectRange = useMemo(() => getScheduledRange(tasks, today), [tasks, today]);
@@ -157,7 +168,9 @@ export default function MobileProject({
           <span>{project.client}</span>
           <strong>{project.title}</strong>
         </div>
-        <button className="pgm-icon-button" aria-label="使い方" onClick={onOpenHelp}>
+        {/* スマホでは「使い方」＝最初のご案内をもう一度見せる方が実用的なので、
+            PC用の使い方モーダル（onOpenHelp）ではなくこちらを再生する。 */}
+        <button className="pgm-icon-button" aria-label="使い方の案内をもう一度見る" onClick={() => setShowTutorial(true)}>
           <CircleHelp size={18} />
         </button>
         {!readOnly && (
@@ -434,6 +447,21 @@ export default function MobileProject({
           onDelete={onDeleteTask}
           onOpenTask={onOpenTask}
           onClose={onCloseTask}
+        />
+      )}
+
+      {showTutorial && (
+        <MobileTutorial
+          onFinish={() => {
+            setShowTutorial(false);
+            onCloseTask();
+          }}
+          onNeedView={setView}
+          onNeedTask={() => {
+            const first = sortMobileTasks(tasks)[0];
+            if (first) onOpenTask(first.id);
+          }}
+          onCloseTask={onCloseTask}
         />
       )}
     </div>

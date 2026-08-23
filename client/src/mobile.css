@@ -1098,6 +1098,107 @@
   @media (prefers-reduced-motion: reduce) {
     .pgm-sheet { animation: none; }
   }
+
+  /* ── 初回のご案内 ───────────────────────────────────────────
+     実際の画面の上に重ねる。作り物の説明画面ではなく本物を指すので、
+     読んだあとそのまま同じ場所を操作できる。 */
+  .pgm-tutorial-layer { position: fixed; z-index: 60; inset: 0; }
+  .pgm-tutorial-veil { position: absolute; inset: 0; background: rgba(15, 21, 26, 0.62); }
+
+  .pgm-tutorial-highlight {
+    position: fixed;
+    z-index: 61;
+    border: 2px solid var(--signal);
+    border-radius: 10px;
+    box-shadow: 0 0 0 4000px rgba(15, 21, 26, 0.62);
+    pointer-events: none;
+    transition: top 0.2s ease, left 0.2s ease, width 0.2s ease, height 0.2s ease;
+  }
+
+  .pgm-tutorial-card {
+    position: fixed;
+    z-index: 62;
+    padding: 16px 16px 14px;
+    background: var(--surface);
+    box-shadow: 0 12px 32px rgba(15, 21, 26, 0.32);
+  }
+
+  .pgm-tutorial-card.is-anchored { border-radius: 10px; }
+  .pgm-tutorial-card.is-centered {
+    top: 50%;
+    left: 16px;
+    right: 16px;
+    transform: translateY(-50%);
+    border-radius: 12px;
+  }
+
+  .pgm-tutorial-close {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: grid;
+    place-items: center;
+    width: 26px;
+    height: 26px;
+    border: 0;
+    color: var(--muted-ink);
+    background: transparent;
+    cursor: pointer;
+  }
+
+  .pgm-tutorial-progress {
+    display: block;
+    margin-bottom: 6px;
+    color: var(--muted-ink);
+    font: 700 10px "Space Grotesk", "Noto Sans JP", sans-serif;
+    letter-spacing: 0.08em;
+  }
+
+  .pgm-tutorial-card h2 {
+    margin: 0 0 6px;
+    padding-right: 24px;
+    color: var(--ink);
+    font-size: 15px;
+    font-weight: 700;
+  }
+
+  .pgm-tutorial-card p {
+    margin: 0;
+    color: var(--muted-ink);
+    font-size: 12.5px;
+    line-height: 1.7;
+  }
+
+  .pgm-tutorial-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 14px;
+  }
+
+  .pgm-tutorial-back,
+  .pgm-tutorial-skip {
+    min-height: 38px;
+    padding: 0 10px;
+    border: 0;
+    color: var(--muted-ink);
+    background: transparent;
+    font-size: 12px;
+    font-weight: 700;
+    cursor: pointer;
+  }
+
+  .pgm-tutorial-next {
+    min-height: 38px;
+    margin-left: auto;
+    padding: 0 18px;
+    border: 1px solid var(--signal);
+    color: var(--signal-ink);
+    background: var(--signal);
+    font-size: 13px;
+    font-weight: 700;
+    cursor: pointer;
+  }
 }
 
 /* ── 縦向きタブレット（700〜860px） ─────────────────────────────────
