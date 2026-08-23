@@ -1332,16 +1332,16 @@ export default function Home() {
 
         <div className="side-section-label">この案件</div>
         <nav className="side-nav" aria-label="案件メニュー">
-          <button className="side-nav-item active" onClick={() => setLocation("/")}><FolderKanban size={17} />案件一覧</button>
-          <button className="side-nav-item" onClick={() => document.getElementById("project-schedule")?.scrollIntoView({ behavior: "smooth", block: "start" })}><CalendarDays size={17} />ガントチャート</button>
+          <button className="side-nav-item active" title="案件一覧" onClick={() => setLocation("/")}><FolderKanban size={17} /><span className="side-nav-label">案件一覧</span></button>
+          <button className="side-nav-item" title="ガントチャート" onClick={() => document.getElementById("project-schedule")?.scrollIntoView({ behavior: "smooth", block: "start" })}><CalendarDays size={17} /><span className="side-nav-label">ガントチャート</span></button>
         </nav>
 
         <div className="side-section-label phase-section-label">フェーズ</div>
         <nav className="phase-nav" aria-label="制作フェーズ">
-          <button onClick={() => setActivePhase("all")} className={`phase-nav-item ${activePhase === "all" ? "selected" : ""}`}><span className="phase-index">00</span>すべて<span className="phase-count">{tasks.length}</span></button>
+          <button onClick={() => setActivePhase("all")} title="すべて" className={`phase-nav-item ${activePhase === "all" ? "selected" : ""}`}><span className="phase-index">00</span><span className="side-nav-label">すべて</span><span className="phase-count">{tasks.length}</span></button>
           {phases.map((phase, index) => (
-            <button key={phase.id} onClick={() => setActivePhase(phase.id)} className={`phase-nav-item ${activePhase === phase.id ? "selected" : ""}`}>
-              <span className={`phase-index ${phase.className}`}>{String(index + 1).padStart(2, "0")}</span>{phase.name}<span className="phase-count">{tasks.filter((task) => task.phase === phase.id).length}</span>
+            <button key={phase.id} onClick={() => setActivePhase(phase.id)} title={phase.name} className={`phase-nav-item ${activePhase === phase.id ? "selected" : ""}`}>
+              <span className={`phase-index ${phase.className}`}>{String(index + 1).padStart(2, "0")}</span><span className="side-nav-label">{phase.name}</span><span className="phase-count">{tasks.filter((task) => task.phase === phase.id).length}</span>
             </button>
           ))}
         </nav>
@@ -1353,7 +1353,7 @@ export default function Home() {
         </div>
 
         <div className="sidebar-bottom">
-          <button className="side-nav-item" onClick={() => setShowShortcuts(true)}><CircleHelp size={17} />使い方</button>
+          <button className="side-nav-item" title="使い方" onClick={() => setShowShortcuts(true)}><CircleHelp size={17} /><span className="side-nav-label">使い方</span></button>
           <button className="profile-row" onClick={() => toast(roleDescription)}>
             <span className="avatar">{user?.name?.slice(0, 2) || roleLabel.slice(0, 1)}</span><span><strong>{user?.name || roleLabel}</strong><small>{roleLabel}</small></span><MoreHorizontal size={17} />
           </button>
