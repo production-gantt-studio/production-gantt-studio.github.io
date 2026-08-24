@@ -53,6 +53,10 @@ type MobileProjectProps = {
   assignees: string[];
   today: string;
   readOnly: boolean;
+  /** 進行メンバーにも開放する2項目(タスクの状態・担当者)を触れるか。 */
+  canEditTaskProgress: boolean;
+  /** 共有リンク・招待リンクで見ているだけか(案件一覧へ戻る導線を持たない)。 */
+  linkOnlyView: boolean;
   progress: number;
   selectedTask: Task | null;
   isSheetOpen: boolean;
@@ -78,6 +82,8 @@ export default function MobileProject({
   assignees,
   today,
   readOnly,
+  canEditTaskProgress,
+  linkOnlyView,
   progress,
   selectedTask,
   isSheetOpen,
@@ -159,7 +165,7 @@ export default function MobileProject({
     <div className="pgm-shell">
       <header className="pgm-topbar">
         {/* 共有リンクで見ている人には案件一覧が無い。戻る先が無いので出さない。 */}
-        {!readOnly && (
+        {!linkOnlyView && (
           <button className="pgm-icon-button" aria-label="案件一覧へ戻る" onClick={onBack}>
             <ChevronLeft size={20} />
           </button>
@@ -185,10 +191,17 @@ export default function MobileProject({
         )}
       </header>
 
-      {readOnly && (
+      {linkOnlyView && (
         <p className="pgm-shared-banner">
           <Eye size={14} />
           外部共有ビュー：この画面には「{project.title}」だけが表示されます。
+        </p>
+      )}
+
+      {!linkOnlyView && readOnly && (
+        <p className="pgm-shared-banner">
+          <Eye size={14} />
+          進行メンバーとして参加しています。各タスクの「状態」と「担当者」を変更できます。
         </p>
       )}
 
@@ -439,6 +452,7 @@ export default function MobileProject({
           range={projectRange}
           today={today}
           readOnly={readOnly}
+          canEditTaskProgress={canEditTaskProgress}
           dateFormat={dateFormat}
           phaseName={phaseName}
           phaseClass={phaseClass}

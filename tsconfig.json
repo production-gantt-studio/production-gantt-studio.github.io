@@ -1,5 +1,5 @@
 {
-  "include": ["client/src/**/*", "shared/**/*", "server/**/*", "scripts/**/*", "drizzle.config.ts"],
+  "include": ["client/src/**/*", "shared/**/*", "server/**/*", "scripts/**/*", "drizzle.config.ts", "supabase/functions/_shared/taskProgress.ts"],
   "exclude": ["node_modules", "build", "dist", "**/*.test.ts"],
   "compilerOptions": {
     "incremental": true,

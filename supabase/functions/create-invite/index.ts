@@ -5,16 +5,22 @@
 // consumes the invite token. This keeps the established exact-email check in
 // accept-invite while avoiding reliance on Supabase's shared outbound email.
 //
-// Manus/Gemini review fixes applied here:
-//   1. Invited role is EDITOR ONLY. Viewer accounts/invites/logins must never
-//      be created (Section 3). The request schema (inviteInput) still
-//      accepts "editor" | "viewer" as a literal shape for backward
-//      compatibility with the existing (unedited, per the standing
-//      constraint) Home.tsx role-selector UI, but this handler rejects
-//      anything other than "editor" outright, with a clear, audit-logged
-//      denial — the actual security boundary is enforced here, not merely
-//      assumed from the UI never asking for anything else.
-//   2. ensureAuthUserForEmail() now runs BEFORE any project_members row is
+// 2026-08-24 変更: 招待できる役割を2種類に戻した。
+//
+//   editor = 編集者。今までどおり、この案件の全部を編集できる。
+//   viewer = 進行メンバー。ログインは必要だが、できるのは「タスクの状態」と
+//            「タスクの担当者」の変更だけ(＋担当引継ぎの記録)。タスクの追加・
+//            削除・日程変更・案件設定・招待・共有リンク発行は一切できない。
+//            実体は update-task-progress Edge Function 側で担保している。
+//
+// 以前(Manus/Gemini レビュー時点)は viewer 招待を 400 で拒否していた。これは
+// 当時の viewer が「ログインもせず、何も変更できない」役割で、共有リンクと
+// 役割が完全に重複していたため。今回 viewer に状態・担当者の変更権限を与え、
+// ログインを必須にしたことで重複が解消したので、拒否を取り下げる。
+// ログイン不要の閲覧専用は、引き続き共有リンク(create-share-link)が担当する。
+//
+// Manus/Gemini review fixes applied here (継続):
+//   1. ensureAuthUserForEmail() now runs BEFORE any project_members row is
 //      written. Previously it ran after the insert/update, so a failure
 //      there (anything other than the benign "already exists" case) left a
 //      committed "pending" invite whose invitee could never actually log in
@@ -56,23 +62,8 @@ Deno.serve((req) =>
     await requireRecentAuthentication(user.id);
     const access = await requireProjectRole(input.publicId, user.id, "editor");
 
-    if (input.role !== "editor") {
-      // Viewer accounts/invites/logins are no longer offered at all (Section
-      // 3). Reject rather than silently downgrade/upgrade the request, so a
-      // caller relying on the still-present (but now non-functional) viewer
-      // option in the UI gets a clear, actionable message instead of a
-      // surprising editor invite they didn't ask for.
-      await recordSecurityAudit({
-        actorUserId: user.id,
-        eventType: "project.invite.create",
-        outcome: "denied",
-        organizationId: access.project.organization_id,
-        projectId: access.project.id,
-        metadata: { reason: "viewer_invite_not_supported" },
-        ipHash: await hashIpAddress(ip),
-      });
-      throw new AppError(400, "閲覧者としての招待は提供していません。編集者として招待してください。");
-    }
+    const invitedRole = input.role;
+    const invitedRoleLabel = invitedRole === "editor" ? "編集者" : "進行メンバー";
 
     const supabase = createServiceRoleClient();
     const email = input.email.trim().toLowerCase();
@@ -99,7 +90,7 @@ Deno.serve((req) =>
       .maybeSingle();
 
     const nextInvite = {
-      role: "editor" as const,
+      role: invitedRole,
       status: "pending" as const,
       user_id: null,
       accepted_at: null,
@@ -118,14 +109,14 @@ Deno.serve((req) =>
       if (error) throw new AppError(500, "招待を作成できませんでした。");
     }
 
-    await recordProjectActivity(access.project.id, user.id, "招待作成", `${email} を編集者として招待しました。`);
+    await recordProjectActivity(access.project.id, user.id, "招待作成", `${email} を${invitedRoleLabel}として招待しました。`);
     await recordSecurityAudit({
       actorUserId: user.id,
       eventType: "project.invite.create",
       outcome: "success",
       organizationId: access.project.organization_id,
       projectId: access.project.id,
-      metadata: { role: "editor" },
+      metadata: { role: invitedRole },
       ipHash: await hashIpAddress(ip),
     });
 
@@ -133,7 +124,7 @@ Deno.serve((req) =>
     return {
       inviteUrl: inviteUrl.toString(),
       tempPassword,
-      role: "editor" as const,
+      role: invitedRole,
       invitedBy: access.accessRole,
       expiresAt: expiresAt.toISOString(),
     };

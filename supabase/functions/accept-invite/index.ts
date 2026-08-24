@@ -66,7 +66,7 @@ Deno.serve((req) =>
       target.project.id,
       user.id,
       "招待受諾",
-      `招待を受諾し、${target.member.role === "editor" ? "編集者" : "閲覧者"}として参加しました。`,
+      `招待を受諾し、${target.member.role === "editor" ? "編集者" : "進行メンバー"}として参加しました。`,
     );
     await recordSecurityAudit({
       actorUserId: user.id,

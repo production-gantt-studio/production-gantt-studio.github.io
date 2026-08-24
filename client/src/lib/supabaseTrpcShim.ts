@@ -157,6 +157,9 @@ export type SharePreviewResult = { project: ClientProject; expiresAt: string } |
 
 export type CreateProjectResult = { publicId: string };
 export type SimpleSuccessResult = { success: true };
+// applied: false = 送った内容に、進行メンバーが変更してよい項目の差分が無かった
+// (＝サーバーは何も書き込んでいない)。エラーではない。
+export type TaskProgressUpdateResult = { success: true; applied: boolean };
 export type CreateInviteResult = { inviteUrl: string; tempPassword: string; role: "editor" | "viewer"; invitedBy: ProjectAccessRole; expiresAt: string };
 export type AcceptInviteResult = { publicId: string; role: "editor" | "viewer" };
 export type CreateShareResult = { shareUrl: string; expiresAt: string };
@@ -404,6 +407,12 @@ export const trpc = {
     ),
     update: makeMutation((input: { publicId: string; title: string; client?: string | null; eventMonth?: string | null; data: string }) =>
       callFunction<SimpleSuccessResult>("update-project", input),
+    ),
+    // 進行メンバー(project_members.role = "viewer")の保存口。送る形は update と
+    // 同じだが、実際に保存されるのはタスクの状態・担当者・担当引継ぎの記録だけで、
+    // それ以外はサーバー側で捨てられる。どちらを呼ぶかは Home.tsx が役割で決める。
+    updateTaskProgress: makeMutation((input: { publicId: string; title: string; client?: string | null; eventMonth?: string | null; data: string }) =>
+      callFunction<TaskProgressUpdateResult>("update-task-progress", input),
     ),
     delete: makeMutation((input: { publicId: string }) => callFunction<SimpleSuccessResult>("delete-project", input)),
     archive: makeMutation((input: { publicId: string }) => callFunction<SimpleSuccessResult>("archive-project", input)),

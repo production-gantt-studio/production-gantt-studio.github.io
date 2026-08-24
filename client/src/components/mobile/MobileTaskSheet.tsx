@@ -19,6 +19,8 @@ type MobileTaskSheetProps = {
   range: TimelineRange;
   today: string;
   readOnly: boolean;
+  /** 進行メンバーにも開放する2項目(タスクの状態・担当者)を触れるか。 */
+  canEditTaskProgress: boolean;
   dateFormat: TaskDateFormat;
   phaseName: (phase: Phase) => string;
   phaseClass: (phase: Phase) => string;
@@ -37,6 +39,7 @@ export default function MobileTaskSheet({
   range,
   today,
   readOnly,
+  canEditTaskProgress,
   dateFormat,
   phaseName,
   phaseClass,
@@ -207,7 +210,7 @@ export default function MobileTaskSheet({
                   <button
                     key={status}
                     type="button"
-                    disabled={readOnly}
+                    disabled={!canEditTaskProgress}
                     aria-pressed={task.status === status}
                     className={`${statusMeta[status].tone} ${task.status === status ? "is-selected" : ""}`}
                     onClick={() => onUpdate(task.id, { status })}
@@ -220,7 +223,7 @@ export default function MobileTaskSheet({
 
             <label className="pgm-field">
               <span className="pgm-field-label">担当者</span>
-              <select disabled={readOnly} value={task.assignee} onChange={(event) => onUpdate(task.id, { assignee: event.target.value })}>
+              <select disabled={!canEditTaskProgress} value={task.assignee} onChange={(event) => onUpdate(task.id, { assignee: event.target.value })}>
                 {assignees.map((assignee) => (
                   <option key={assignee} value={assignee}>
                     {assignee}
@@ -303,7 +306,16 @@ export default function MobileTaskSheet({
 
         <footer className="pgm-sheet-foot">
           {readOnly ? (
-            <p className="pgm-readonly-note">閲覧専用です。変更はできません。</p>
+            canEditTaskProgress ? (
+              <>
+                <p className="pgm-readonly-note">変更できるのは「ステータス」と「担当者」だけです。</p>
+                <button className="pgm-primary-button" onClick={onClose}>
+                  閉じる
+                </button>
+              </>
+            ) : (
+              <p className="pgm-readonly-note">閲覧専用です。変更はできません。</p>
+            )
           ) : (
             <>
               <button className="pgm-primary-button" onClick={onClose}>
