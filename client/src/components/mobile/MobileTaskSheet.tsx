@@ -104,7 +104,7 @@ export default function MobileTaskSheet({
                 <dd>{dayLabel}</dd>
               </div>
               <div>
-                <dt>状態</dt>
+                <dt>ステータス</dt>
                 <dd>
                   <span className={`pgm-status ${statusMeta[task.status].tone}`}>
                     <i />

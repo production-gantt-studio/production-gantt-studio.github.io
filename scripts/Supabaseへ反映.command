@@ -16,7 +16,7 @@ cd "$(dirname "$0")/.."
 PROJECT_REF="pcudvibzfsmblztcriib"
 KEYCHAIN_SERVICE="Supabase CLI"
 KEYCHAIN_ACCOUNT="production-gantt-studio"
-FUNCTIONS=(update-task-progress create-invite accept-invite)
+FUNCTIONS=(update-task-progress create-invite accept-invite update-member-role)
 
 print ""
 print "============================================"
