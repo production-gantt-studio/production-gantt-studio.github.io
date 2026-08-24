@@ -271,7 +271,20 @@
 .timeline-card .gantt-task-lane { height: 82px; }
 .timeline-card .gantt-bar { top: 29px; }
 
-.timeline-card .task-title { padding-top: 1px; }
+/* タスク名列は、列幅(--task-column-width)を広げたぶんだけ実際に広がる必要が
+   ある。flex-grow が無いと、名前欄は自分のコンテンツの内在幅までしか広がらず、
+   列を広げても増えた分は担当・状態ボタン側の余白に消えるだけだった
+   (Riku 2026-08-24 報告: 長い日本語タスク名が省略されずに読めるようにしたい、
+   の実質的な原因)。名前欄だけを伸縮対象にし、アイコンボタン・状態ピルは
+   flex-shrink:0 で押しつぶされないよう固定する。 */
+.timeline-card .task-title { padding-top: 1px; flex: 1 1 0%; min-width: 0; }
+.timeline-card .task-row > .drag-handle,
+.timeline-card .task-row > .task-select-toggle,
+.timeline-card .task-row > .add-subtask-button,
+.timeline-card .task-row > .task-more-button,
+.timeline-card .task-row > .inline-important-button,
+.timeline-card .task-row > .task-delete-button,
+.timeline-card .task-row > .status-pill { flex-shrink: 0; }
 .timeline-card .task-schedule { position: absolute; left: 32px; top: 32px; color: var(--muted-ink); font-size: 9px; line-height: 12px; white-space: nowrap; }
 .timeline-card .task-row.is-bulk-mode .task-schedule { left: 56px; }
 .timeline-card .task-schedule .subtask-count { margin-left: 5px; color: var(--muted-ink); font-style: normal; }

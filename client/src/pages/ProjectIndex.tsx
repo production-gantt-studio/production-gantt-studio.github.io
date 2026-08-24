@@ -319,13 +319,36 @@ export default function ProjectIndex() {
   const [legacyProjects, setLegacyProjects] = useState<StoredProject[]>(loadLegacyProjectsForMigration);
   const [legacyMigrationStatus, setLegacyMigrationStatus] = useState<"idle" | "saving" | "error">("idle");
   const remoteSampleMigrationIdsRef = useRef(new Set<string>());
+  const wasAuthenticatedRef = useRef(false);
+
+  // react-query keeps serving a disabled query's last-known `.data` (it does
+  // not clear it just because `enabled` flips to false — see useAuth's
+  // logout(), which now also clears the whole cache as the general fix for
+  // that). This effect is this screen's own safety net: the moment sign-out
+  // actually happens, drop the just-signed-out user's project/archive state
+  // and fall back to the same local, no-login-required view a fresh visitor
+  // sees (Sample projects) — instead of leaving their real project list on
+  // screen (Riku 2026-08-24 report: "ログアウト後も案件一覧が残る").
+  // Guarded by wasAuthenticatedRef so this never fires on first mount/before
+  // any login this session, when `projects`/`archive` are already correctly
+  // initialized from loadProjects()/loadArchive().
+  useEffect(() => {
+    if (isAuthenticated) {
+      wasAuthenticatedRef.current = true;
+      return;
+    }
+    if (!wasAuthenticatedRef.current) return;
+    wasAuthenticatedRef.current = false;
+    setProjects(loadProjects());
+    setArchive(loadArchive());
+  }, [isAuthenticated]);
 
   useEffect(() => {
     const active = archive.filter(isActiveArchive);
     if (active.length !== archive.length) { setArchive(active); persistArchive(active); }
   }, [archive]);
   useEffect(() => {
-    if (!remoteProjectsQuery.data) return;
+    if (!isAuthenticated || !remoteProjectsQuery.data) return;
     const synced = remoteProjectsQuery.data.flatMap(({ project, accessRole }) => {
       try {
         return [{ id: project.publicId, project: JSON.parse(project.data) as ProjectSnapshot, createdAt: project.createdAt.toISOString(), accessRole }];

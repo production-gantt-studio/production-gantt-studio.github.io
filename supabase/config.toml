@@ -39,7 +39,7 @@ verify_jwt = true
 [functions.update-project]
 verify_jwt = true
 
-# 進行メンバー(role = "viewer")でも通せる唯一の書き込み口。招待されている人なら
+# 進捗担当(role = "viewer")でも通せる唯一の書き込み口。招待されている人なら
 # 呼べるが、保存されるのはタスクの状態・担当者・担当引継ぎの記録だけ
 # (supabase/functions/update-task-progress/index.ts の冒頭コメント参照)。
 [functions.update-task-progress]
@@ -61,6 +61,9 @@ verify_jwt = true
 verify_jwt = true
 
 [functions.revoke-invite]
+verify_jwt = true
+
+[functions.update-member-role]
 verify_jwt = true
 
 [functions.create-share-link]

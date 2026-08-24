@@ -33,7 +33,7 @@ import { reorderTaskGroup } from "@/lib/taskReorder";
 import { normalizeSampleProjectIdentity } from "@/lib/sampleProjectIdentity";
 import { syncParentTaskStatus } from "@/lib/parentTaskStatus";
 import { exceedsEventMonth } from "@/lib/projectSchedulePeriod";
-import { clampTaskColumnWidth, getTimelineDisplayMetrics, TASK_COLUMN_DEFAULT_WIDTH } from "@/lib/timelineLayout";
+import { clampTaskColumnWidth, clampTimelineZoom, getTimelineDisplayMetrics, TASK_COLUMN_DEFAULT_WIDTH, TIMELINE_ZOOM_DEFAULT, TIMELINE_ZOOM_MAX, TIMELINE_ZOOM_MIN, TIMELINE_ZOOM_STEP } from "@/lib/timelineLayout";
 import {
   BellRing,
   CalendarDays,
@@ -52,6 +52,7 @@ import {
   GripVertical,
   Menu,
   Mail,
+  Minus,
   MoreHorizontal,
   Plus,
   Printer,
@@ -60,6 +61,7 @@ import {
   Settings2,
   Share2,
   SlidersHorizontal,
+  Trash2,
   Undo2,
   Users,
   X,
@@ -67,7 +69,6 @@ import {
 import { toast } from "sonner";
 import { useLocation } from "wouter";
 
-const DAY_WIDTH = 34;
 const STORAGE_KEY = "production-gantt-studio-v1";
 const PROJECTS_STORAGE_KEY = "production-gantt-studio-projects-v1";
 const VIEW_START = "2026-08-17";
@@ -422,7 +423,7 @@ export default function Home() {
   // handler: onClick={() => startLogin()} (imported from "@/const"). Never call
   // startLogin() during render (no href={startLogin()}) — it mints a one-time
   // nonce cookie and must run only at the moment of navigation.
-  const { isAuthenticated, user, logout } = useAuth();
+  const { isAuthenticated, loading: authLoading, user, logout } = useAuth();
 
   // 860px以下（スマホと縦向きタブレット）は専用画面に差し替える。それより広い画面はこれまでのまま。
   const isNarrow = useNarrowViewport();
@@ -439,18 +440,19 @@ export default function Home() {
   const remoteShareQuery = trpc.projects.sharePreview.useQuery({ token: shareToken ?? "" }, { enabled: Boolean(shareToken) });
   const viewerInviteQuery = trpc.projects.invitePreview.useQuery({ token: inviteToken ?? "" }, { enabled: Boolean(inviteToken) });
   const remoteUpdateProject = trpc.projects.update.useMutation();
-  // 進行メンバー(状態と担当者だけ変更できる人)の保存口。編集者・管理者は使わない。
+  // 進捗担当(状態と担当者だけ変更できる人)の保存口。編集者・管理者は使わない。
   const remoteUpdateTaskProgress = trpc.projects.updateTaskProgress.useMutation();
   const projectMembersQuery = trpc.projects.members.useQuery({ publicId: projectId ?? "" }, { enabled: Boolean(projectId && isAuthenticated && remoteProjectQuery.data?.project) });
   const projectActivityQuery = trpc.projects.activity.useQuery({ publicId: projectId ?? "" }, { enabled: Boolean(projectId && isAuthenticated && remoteProjectQuery.data?.project) });
   const inviteProjectMember = trpc.projects.invite.useMutation();
   const revokeProjectMember = trpc.projects.revokeInvite.useMutation();
+  const updateProjectMemberRole = trpc.projects.updateMemberRole.useMutation();
   const createProjectShare = trpc.projects.createShare.useMutation();
   const revokeProjectShare = trpc.projects.revokeShare.useMutation();
   const projectSharesQuery = trpc.projects.shares.useQuery({ publicId: projectId ?? "" }, { enabled: Boolean(projectId && isAuthenticated && remoteProjectQuery.data?.accessRole !== "viewer") });
   const accessPresentation = getProjectAccessPresentation({ accountRole: user?.role, projectAccessRole: remoteProjectQuery.data?.accessRole, sharedView, invitePreview: Boolean(inviteToken) });
   // readOnly = タスク追加・削除・日程変更など「案件そのものの編集」ができない。
-  // progressOnly = ログイン済みの進行メンバー。状態と担当者だけ変更できる。
+  // progressOnly = ログイン済みの進捗担当。状態と担当者だけ変更できる。
   // linkOnlyView = 共有リンク/招待リンクで見ているだけ。案件一覧も設定も持たない。
   const { readOnly, linkOnlyView, progressOnly, roleLabel, roleDescription, canEditInline, canEditTaskProgress, showDetailSettings } = accessPresentation;
   const [changePasswordOpen, setChangePasswordOpen] = useState(false);
@@ -489,9 +491,31 @@ export default function Home() {
   const [draggedTaskId, setDraggedTaskId] = useState<string | null>(null);
   const [editingGanttTaskId, setEditingGanttTaskId] = useState<string | null>(null);
   const [taskColumnWidth, setTaskColumnWidth] = useState(() => {
-    const stored = Number(localStorage.getItem("production-gantt-task-column-width"));
+    // localStorage.getItem() returns null when nothing was ever saved (every
+    // first-time visitor, and any browser where the column was never
+    // dragged). `Number(null)` is 0 — NOT NaN — so the old
+    // `Number.isFinite(stored)` check treated "nothing saved" as "0px was
+    // saved" and clamped it straight to TASK_COLUMN_MIN_WIDTH (260px)
+    // instead of ever using TASK_COLUMN_DEFAULT_WIDTH (360px). That's why
+    // the task name column always opened at its narrowest possible width
+    // (Riku 2026-08-24 report: long Japanese task names were cut off).
+    const raw = localStorage.getItem("production-gantt-task-column-width");
+    if (raw === null) return TASK_COLUMN_DEFAULT_WIDTH;
+    const stored = Number(raw);
     return Number.isFinite(stored) ? clampTaskColumnWidth(stored) : TASK_COLUMN_DEFAULT_WIDTH;
   });
+  // カレンダーの拡大縮小(+/-)。サーバー側のデータ構造は変えず、端末のローカル
+  // 設定として保持する(Riku 2026-08-24 追加依頼)。案件をまたいで共通の見やすさ
+  // の好みなので、案件ごとではなく端末ごとに1つだけ持つ。
+  const [timelineZoom, setTimelineZoom] = useState(() => {
+    const raw = localStorage.getItem("production-gantt-timeline-zoom");
+    if (raw === null) return TIMELINE_ZOOM_DEFAULT;
+    const stored = Number(raw);
+    return Number.isFinite(stored) ? clampTimelineZoom(stored) : TIMELINE_ZOOM_DEFAULT;
+  });
+  useEffect(() => {
+    localStorage.setItem("production-gantt-timeline-zoom", String(timelineZoom));
+  }, [timelineZoom]);
   const barGestureMovedRef = useRef(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const timelineScrollRef = useRef<HTMLDivElement>(null);
@@ -554,7 +578,17 @@ export default function Home() {
     const endMonth = project.eventMonth || fallbackMonth;
     return `登録 ${formatter.format(parseDate(`${registrationMonth}-01`))} — ${project.eventMonth ? "開催" : "予定終了"} ${formatter.format(parseDate(`${endMonth}-01`))}`;
   }, [project.eventMonth, registrationMonth, scheduledTasks]);
-  const timelineStartDate = `${registrationMonth}-01`;
+  // ガントの表示開始は、登録月を既定としつつ、それより前に始まるタスクが
+  // あればそのタスクの月まで遡る(Riku 2026-08-24 追加依頼: 過去のタスクも
+  // 見られるようにしたい)。無制限に遡るわけではなく、「案件内で一番古い
+  // 開始日のタスクがある月」が下限。予定タスクが1件も無い(日程未定のみ)場合は
+  // 従来どおり登録月を使う。
+  const earliestTaskStartMonth = useMemo(
+    () => (scheduledTasks.length ? startOfMonth([...scheduledTasks].sort((a, b) => a.start.localeCompare(b.start))[0].start).slice(0, 7) : null),
+    [scheduledTasks],
+  );
+  const timelineStartMonth = earliestTaskStartMonth && earliestTaskStartMonth < registrationMonth ? earliestTaskStartMonth : registrationMonth;
+  const timelineStartDate = `${timelineStartMonth}-01`;
   const lastTaskEnd = useMemo(() => scheduledTasks.length ? [...scheduledTasks].sort((a, b) => a.end.localeCompare(b.end)).at(-1)!.end : VIEW_START, [scheduledTasks]);
   const timelineEndMonth = project.eventMonth && project.eventMonth >= registrationMonth ? project.eventMonth : startOfMonth(lastTaskEnd).slice(0, 7);
   const timelineEndDate = endOfMonth(`${timelineEndMonth}-01`);
@@ -579,7 +613,8 @@ export default function Home() {
   );
   const visibleDayCount = Math.min(dayRangeDays, dailyRangeLimit);
   const timelineMetrics = getTimelineDisplayMetrics(timelineMode, visibleDayCount);
-  const timelineUnitWidth = timelineMetrics.unitWidth;
+  // +/-で調整した拡大縮小率を、日ごと・週ごと・月ごとどの表示モードの基準幅にも一律で掛ける。
+  const timelineUnitWidth = timelineMetrics.unitWidth * timelineZoom;
   const timelineUnitCount = timelineMetrics.unitCount;
   const timelineUnits = useMemo(() => Array.from({ length: timelineUnitCount }, (_, index) => timelineMode === "weeks" ? addWeeks(projectStartMonth, index) : addDays(projectStartMonth, index)), [timelineUnitCount, timelineMode, projectStartMonth]);
   const timelineMonths = useMemo(() => timelineUnits.reduce<{ label: string; count: number }[]>((items, date) => {
@@ -634,7 +669,7 @@ export default function Home() {
   }, [outOfPeriodTasks, readOnly]);
 
   useEffect(() => {
-    // 進行メンバーは readOnly(＝案件そのものは編集できない)だが、状態と担当者は
+    // 進捗担当は readOnly(＝案件そのものは編集できない)だが、状態と担当者は
     // 変えられるので保存は走らせる。送り先だけ、許可の狭い方の口へ切り替える。
     if ((!readOnly || progressOnly) && !blankPreview) {
       const nextProject = { ...project, updatedAt: new Date().toISOString() };
@@ -649,9 +684,24 @@ export default function Home() {
         }, 450);
         return () => window.clearTimeout(timer);
       }
-      // 進行メンバーはサーバー上の案件を見ているだけで、自分の手元の案件一覧を
+      // 進捗担当はサーバー上の案件を見ているだけで、自分の手元の案件一覧を
       // 持たない。読み込み待ちの一瞬に、他人の案件を手元へ書き写さないよう止める。
       if (progressOnly) return;
+      // ログイン済みでサーバー保存の案件(projectIdあり)なのに、この分岐に
+      // 来たということは、上のif(676行目)の
+      // `remoteProjectQuery.data?.project` がまだ届いていない=リモートの
+      // 読み込み待ちの一瞬ということ。その間の `project` ステートは新規作成
+      // 直後のプレースホルダー値のことがあり、それをここで手元(ローカル
+      // ストレージ)へ書いてしまうと、サーバー上の本当のタイトル・クライアント名
+      // ではなく作成直後の仮の値でキャッシュが上書きされる
+      // (2026-08-24 発見: 新規案件作成直後にログアウトすると、案件名が
+      // テンプレートの見本名のまま案件一覧に残ってしまっていた)。
+      // ログイン済みならサーバーが正なので、リモートが届くまでは何も書かない。
+      // authLoading(ログイン確認そのものが完了していない一瞬)もここに含める
+      // — ページを開いた直後は isAuthenticated がまだ確定前の false を
+      // 返すため、authLoading を見ずに isAuthenticated だけで判定すると、
+      // 実際はログイン済みのユーザーでもこの一瞬だけローカル保存へ落ちてしまう。
+      if ((isAuthenticated || authLoading) && projectId) return;
       if (projectId) {
         try {
           const stored = localStorage.getItem(PROJECTS_STORAGE_KEY);
@@ -667,7 +717,7 @@ export default function Home() {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(nextProject));
       }
     }
-  }, [project, readOnly, progressOnly, blankPreview, isAuthenticated, projectId, remoteProjectQuery.data?.project]);
+  }, [project, readOnly, progressOnly, blankPreview, isAuthenticated, authLoading, projectId, remoteProjectQuery.data?.project]);
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
@@ -805,7 +855,7 @@ export default function Home() {
   };
 
   const updateTask = (id: string, patch: Partial<Task>, cascade = false) => {
-    // 進行メンバーは、このタスク編集の入口を「状態」と「担当者」だけに絞る。
+    // 進捗担当は、このタスク編集の入口を「ステータス」と「担当者」だけに絞る。
     // 画面上もこの2つしか出していないが、ここでも同じ線を引いておく
     // (最終的な線引きはサーバー側の update-task-progress が持つ)。
     if (readOnly) {
@@ -896,10 +946,16 @@ export default function Home() {
     setShowInspector(true);
   };
 
-  // 削除はPCの詳細パネルとスマホのタスク詳細で同じ手順を使う。配下タスクは
-  // 消さずに最上位へ移し、この工程を指していた依存も外す。
+  // 削除はPCの行の削除ボタン・PCの詳細パネル・スマホのタスク詳細で同じ手順を
+  // 使う。配下タスクは消さずに最上位へ移し、この工程を指していた依存も外す。
+  // 削除前に「その他」のUndoスナップショットを取るため、PC版は確認ダイアログ
+  // なしの一発削除でも「その他 → 戻す」で直前の状態に戻せる(案件一覧の
+  // 「アーカイブへ移す」と同じ、確認ダイアログなし・取り消し可能という設計に
+  // 合わせた)。スマホ版(MobileTaskSheet)は「その他」パネル自体が無く戻せない
+  // ため、従来どおり削除前にwindow.confirmで確認する。
   const deleteTask = (id: string) => {
     if (readOnly) return;
+    setUndoSnapshot({ tasks: tasks.map((item) => ({ ...item, dependencies: [...item.dependencies] })), label: "タスク削除" });
     setProject((current) => ({
       ...current,
       tasks: current.tasks
@@ -911,7 +967,7 @@ export default function Home() {
         })),
     }));
     setShowInspector(false);
-    toast.success("タスクを削除しました。配下タスクは最上位へ移しました");
+    toast.success("タスクを削除しました。「その他」の「戻す」で元に戻せます");
   };
 
   const extendDailyTimeline = () => {
@@ -923,7 +979,10 @@ export default function Home() {
     setTimelineMode("days");
     setDayRangeDays((current) => Math.min(dailyRangeLimit, Math.max(current, Math.ceil((dayOffset + 1) / VIEW_DAYS) * VIEW_DAYS)));
     window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
-      timelineScrollRef.current?.scrollTo({ left: Math.max(0, dayOffset * DAY_WIDTH - 200), behavior: "smooth" });
+      // DAY_WIDTH(固定34px)ではなく、拡大縮小後の実寸(timelineUnitWidth)で
+      // スクロール位置を計算する。固定値のままだと、縮小/拡大した状態でこの
+      // ジャンプ導線を使った時に的外れな位置へスクロールしてしまう。
+      timelineScrollRef.current?.scrollTo({ left: Math.max(0, dayOffset * timelineUnitWidth - 200), behavior: "smooth" });
     }));
   };
 
@@ -932,12 +991,19 @@ export default function Home() {
       toast("今日の日付はこの案件の表示範囲外です");
       return;
     }
-    const offset = timelineOffsetForDate(TODAY);
-    window.requestAnimationFrame(() => {
+    // 表示開始が過去のタスクまで遡るようになったぶん、今日までの日数が
+    // 初期表示(42日)を超えているケースが増える。まず今日を含むところまで
+    // 日ごと表示の範囲を広げてから(dailyRangeLimitでクランプ済み・週/月表示では
+    // 実質no-op)、実際にスクロールする。2重rAFは、範囲を広げた直後の再描画で
+    // scrollWidthが確定するのを1フレーム待つため(jumpToDateと同じ手当て)。
+    const dayOffset = Math.max(0, diffDays(projectStartMonth, TODAY));
+    setDayRangeDays((current) => Math.min(dailyRangeLimit, Math.max(current, Math.ceil((dayOffset + 1) / VIEW_DAYS) * VIEW_DAYS)));
+    window.requestAnimationFrame(() => window.requestAnimationFrame(() => {
       const scroll = timelineScrollRef.current;
       if (!scroll) return;
+      const offset = timelineOffsetForDate(TODAY);
       scroll.scrollTo({ left: Math.max(0, offset * timelineUnitWidth - scroll.clientWidth / 2 + timelineUnitWidth / 2), behavior: "smooth" });
-    });
+    }));
   };
 
   const changeTimelineMode = (mode: "days" | "weeks" | "months") => {
@@ -1390,7 +1456,7 @@ export default function Home() {
       ) : (
       <main className="studio-main">
         {linkOnlyView && <div className="shared-banner"><Eye size={15} />外部共有ビュー：このURLには「{project.title}」のみが含まれます。他プロジェクト、設定、編集機能は表示されません。</div>}
-        {progressOnly && <div className="shared-banner"><Eye size={15} />進行メンバーとして参加しています。各タスクの「状態」と「担当者」を変更できます。タスクの追加・削除や日程の変更はできません。</div>}
+        {progressOnly && <div className="shared-banner"><Eye size={15} />進捗担当として参加しています。各タスクの「ステータス」と「担当者」を変更できます。タスクの追加・削除や日程の変更はできません。</div>}
         {blankPreview && <div className="shared-banner"><Eye size={15} />新規案件画面のプレビューです。このURLではデータを保存しません。</div>}
         <header className="topbar no-print">
           <div className="breadcrumb">{linkOnlyView ? <span>SHARED PROJECT</span> : <button className="breadcrumb-root" onClick={() => setLocation("/")}>案件管理</button>}<ChevronRight size={14} />{linkOnlyView ? <strong>{project.title}</strong> : <button className="project-title-trigger" onClick={() => setWorkspacePanel("project")}><strong>{project.title}</strong><ChevronDown size={14} /></button>}</div>
@@ -1455,7 +1521,7 @@ export default function Home() {
         ) : (
         <section className="timeline-card" aria-label="制作ガントチャート" id="project-schedule" style={{ "--task-column-width": `${taskColumnWidth}px` } as React.CSSProperties}>
           <div className="timeline-topline">
-            <div className="timeline-caption"><span>ガントチャート</span><strong>{visibleTasks.length}件のタスク</strong><div className="timeline-view-switch no-print" aria-label="表示方法"><button className={timelineMode === "days" ? "active" : ""} onClick={() => changeTimelineMode("days")}>日ごと</button><button className={timelineMode === "weeks" ? "active" : ""} onClick={() => changeTimelineMode("weeks")}>週ごと</button><button className={timelineMode === "months" ? "active" : ""} onClick={() => changeTimelineMode("months")}>月ごと</button></div><button className="timeline-today-button no-print" onClick={jumpToToday}><CalendarDays size={12} />今日</button></div>
+            <div className="timeline-caption"><span>ガントチャート</span><strong>{visibleTasks.length}件のタスク</strong><div className="timeline-view-switch no-print" aria-label="表示方法"><button className={timelineMode === "days" ? "active" : ""} onClick={() => changeTimelineMode("days")}>日ごと</button><button className={timelineMode === "weeks" ? "active" : ""} onClick={() => changeTimelineMode("weeks")}>週ごと</button><button className={timelineMode === "months" ? "active" : ""} onClick={() => changeTimelineMode("months")}>月ごと</button></div><button className="timeline-today-button no-print" onClick={jumpToToday}><CalendarDays size={12} />今日</button><div className="timeline-zoom-control no-print" aria-label="表示の拡大縮小"><button aria-label="縮小" title="縮小" disabled={timelineZoom <= TIMELINE_ZOOM_MIN} onClick={() => setTimelineZoom((current) => clampTimelineZoom(current - TIMELINE_ZOOM_STEP))}><Minus size={12} /></button><span>{Math.round(timelineZoom * 100)}%</span><button aria-label="拡大" title="拡大" disabled={timelineZoom >= TIMELINE_ZOOM_MAX} onClick={() => setTimelineZoom((current) => clampTimelineZoom(current + TIMELINE_ZOOM_STEP))}><Plus size={12} /></button></div></div>
             <div className="timeline-legend"><span><i className="legend-dot legend-active" />進行中</span><span><i className="legend-dot legend-review" />確認中</span><span><i className="legend-dot legend-done" />完了</span></div>
           </div>
           <div className="timeline-scroll" ref={timelineScrollRef} onScroll={(event) => { const target = event.currentTarget; if (dayRangeDays < dailyRangeLimit && target.scrollLeft + target.clientWidth >= target.scrollWidth - 180) extendDailyTimeline(); }}>
@@ -1470,7 +1536,7 @@ export default function Home() {
                 {groups.map(({ phase, taskCount, isExpanded, tasks: phaseTasks }) => (
                   <div key={phase} className="phase-block">
                     <div className={`phase-row ${isExpanded ? "is-expanded" : "is-collapsed"}`}><button className="phase-accordion-trigger no-print" aria-label={`${phaseName(phase)}を${isExpanded ? "折りたたむ" : "展開する"}`} aria-expanded={isExpanded} onClick={() => togglePhaseCollapsed(phase)}>{isExpanded ? <ChevronDown size={14} /> : <ChevronRight size={14} />}</button><span className={`phase-label-bar ${phaseClass(phase)}`} /><div>{readOnly ? <b>{phaseName(phase)}</b> : <input className="inline-phase-name" aria-label={`${phaseName(phase)}のフェーズ名`} value={phaseName(phase)} onChange={(event) => updatePhaseName(phase, event.target.value)} onBlur={(event) => updatePhaseName(phase, event.target.value)} />}</div><small>{taskCount}件</small>{canEditInline && <div className="phase-inline-actions no-print"><button className="phase-add-task-button" title="このフェーズにタスクを追加" aria-label={`${phaseName(phase)}にタスクを追加`} onClick={() => addPhaseAfter(phase)}><Plus size={13} /><span>タスク</span></button><button className="phase-delete-inline" title="このフェーズを削除" aria-label={`${phaseName(phase)}を削除`} onClick={() => deletePhase(phase)}><X size={13} /></button></div>}</div>
-                    {phaseTasks.map((task) => <div key={task.id} className={`task-row ${bulkSelectionMode ? "is-bulk-mode" : ""} ${selectedId === task.id ? "selected" : ""} ${selectedTaskIds.includes(task.id) ? "bulk-selected" : ""} ${task.isImportant ? "is-important" : ""} ${task.isUnscheduled ? "is-unscheduled" : ""} ${task.parentId ? "is-subtask" : ""} ${parentTaskIds.has(task.id) ? "has-subtasks" : ""}`}>{!readOnly && bulkSelectionMode && <button className={`task-select-toggle no-print ${selectedTaskIds.includes(task.id) ? "active" : ""}`} aria-label={`${task.name}を一括操作に${selectedTaskIds.includes(task.id) ? "含めない" : "含める"}`} onClick={(event) => { event.stopPropagation(); toggleTaskSelection(task.id); }}><Check size={12} /></button>}<button className="drag-handle" aria-label="タスクを移動" disabled={task.isUnscheduled}><GripVertical size={15} /></button><div className="task-title"><strong>{parentTaskIds.has(task.id) && <button className="task-accordion-trigger no-print" title={project.collapsedTaskIds.includes(task.id) ? "詳細タスクを表示" : "詳細タスクを折りたたむ"} aria-label={`${task.name}の詳細タスクを${project.collapsedTaskIds.includes(task.id) ? "表示" : "折りたたむ"}`} aria-expanded={!project.collapsedTaskIds.includes(task.id)} onClick={(event) => { event.stopPropagation(); toggleTaskCollapsed(task.id); }}>{project.collapsedTaskIds.includes(task.id) ? <ChevronRight size={13} /> : <ChevronDown size={13} />}</button>}{task.parentId && <em className="subtask-branch">↳</em>}{readOnly ? task.name : <input className="inline-task-name" aria-label={`${task.name}のタスク名`} value={task.name} onClick={(event) => event.stopPropagation()} onChange={(event) => updateTask(task.id, { name: event.target.value })} onBlur={(event) => updateTask(task.id, { name: normalizeInlineName(event.target.value, "名称未設定") })} />}</strong></div><span className="task-schedule">{task.isUnscheduled ? "日程未定" : formatTaskDateRange(task.start, task.end, project.taskDateFormat ?? "compact")}{parentTaskIds.has(task.id) && <em className="subtask-count">{childTasksByParent.get(task.id)?.length}件の詳細タスク</em>}</span>{canEditTaskProgress && <div className="task-inline-quick-fields no-print"><select aria-label={`${task.name}の担当者`} value={task.assignee} onChange={(event) => updateTask(task.id, { assignee: event.target.value })}>{assignees.map((assignee) => <option key={assignee} value={assignee}>{assignee}</option>)}</select><select aria-label={`${task.name}の状態`} value={task.status} onChange={(event) => updateTask(task.id, { status: event.target.value as Status })}>{statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>}{!readOnly && !task.parentId && <button className="add-subtask-button no-print" title="詳細タスクを追加" aria-label={`${task.name}に詳細タスクを追加`} onClick={(event) => { event.stopPropagation(); addSubtask(task.id); }}><Plus size={13} /></button>}{showDetailSettings && <button className="task-more-button no-print" title="詳細な設定" aria-label={`${task.name}の詳細な設定を開く`} onClick={() => openTask(task.id)}><MoreHorizontal size={15} /></button>}<button className={`inline-important-button no-print ${task.isImportant ? "active" : ""}`} aria-label={`${task.name}を重要タスクに${task.isImportant ? "しない" : "する"}`} title={task.isImportant ? "重要タスクを解除" : "重要タスクに追加"} disabled={readOnly} onClick={(event) => { event.stopPropagation(); toggleTaskImportance(task.id); }}><Flag size={13} fill={task.isImportant ? "currentColor" : "none"} /></button><span className={`status-pill ${statusMeta[task.status].tone}`}><i />{task.status}</span></div>)}
+                    {phaseTasks.map((task) => <div key={task.id} className={`task-row ${bulkSelectionMode ? "is-bulk-mode" : ""} ${selectedId === task.id ? "selected" : ""} ${selectedTaskIds.includes(task.id) ? "bulk-selected" : ""} ${task.isImportant ? "is-important" : ""} ${task.isUnscheduled ? "is-unscheduled" : ""} ${task.parentId ? "is-subtask" : ""} ${parentTaskIds.has(task.id) ? "has-subtasks" : ""}`}>{!readOnly && bulkSelectionMode && <button className={`task-select-toggle no-print ${selectedTaskIds.includes(task.id) ? "active" : ""}`} aria-label={`${task.name}を一括操作に${selectedTaskIds.includes(task.id) ? "含めない" : "含める"}`} onClick={(event) => { event.stopPropagation(); toggleTaskSelection(task.id); }}><Check size={12} /></button>}<button className="drag-handle" aria-label="タスクを移動" disabled={task.isUnscheduled}><GripVertical size={15} /></button><div className="task-title"><strong>{parentTaskIds.has(task.id) && <button className="task-accordion-trigger no-print" title={project.collapsedTaskIds.includes(task.id) ? "詳細タスクを表示" : "詳細タスクを折りたたむ"} aria-label={`${task.name}の詳細タスクを${project.collapsedTaskIds.includes(task.id) ? "表示" : "折りたたむ"}`} aria-expanded={!project.collapsedTaskIds.includes(task.id)} onClick={(event) => { event.stopPropagation(); toggleTaskCollapsed(task.id); }}>{project.collapsedTaskIds.includes(task.id) ? <ChevronRight size={13} /> : <ChevronDown size={13} />}</button>}{task.parentId && <em className="subtask-branch">↳</em>}{readOnly ? task.name : <input className="inline-task-name" aria-label={`${task.name}のタスク名`} value={task.name} onClick={(event) => event.stopPropagation()} onChange={(event) => updateTask(task.id, { name: event.target.value })} onBlur={(event) => updateTask(task.id, { name: normalizeInlineName(event.target.value, "名称未設定") })} />}</strong></div><span className="task-schedule">{task.isUnscheduled ? "日程未定" : formatTaskDateRange(task.start, task.end, project.taskDateFormat ?? "compact")}{parentTaskIds.has(task.id) && <em className="subtask-count">{childTasksByParent.get(task.id)?.length}件の詳細タスク</em>}</span>{canEditTaskProgress && <div className="task-inline-quick-fields no-print"><select aria-label={`${task.name}の担当者`} value={task.assignee} onChange={(event) => updateTask(task.id, { assignee: event.target.value })}>{assignees.map((assignee) => <option key={assignee} value={assignee}>{assignee}</option>)}</select><select aria-label={`${task.name}のステータス`} value={task.status} onChange={(event) => updateTask(task.id, { status: event.target.value as Status })}>{statusOptions.map((status) => <option key={status} value={status}>{status}</option>)}</select></div>}{!readOnly && !task.parentId && <button className="add-subtask-button no-print" title="詳細タスクを追加" aria-label={`${task.name}に詳細タスクを追加`} onClick={(event) => { event.stopPropagation(); addSubtask(task.id); }}><Plus size={13} /></button>}{showDetailSettings && <button className="task-more-button no-print" title="詳細な設定" aria-label={`${task.name}の詳細な設定を開く`} onClick={() => openTask(task.id)}><MoreHorizontal size={15} /></button>}<button className={`inline-important-button no-print ${task.isImportant ? "active" : ""}`} aria-label={`${task.name}を重要タスクに${task.isImportant ? "しない" : "する"}`} title={task.isImportant ? "重要タスクを解除" : "重要タスクに追加"} disabled={readOnly} onClick={(event) => { event.stopPropagation(); toggleTaskImportance(task.id); }}><Flag size={13} fill={task.isImportant ? "currentColor" : "none"} /></button>{!readOnly && <button className="task-delete-button no-print" title="タスクを削除" aria-label={`${task.name}を削除`} onClick={(event) => { event.stopPropagation(); deleteTask(task.id); }}><Trash2 size={13} /></button>}<span className={`status-pill ${statusMeta[task.status].tone}`}><i />{task.status}</span></div>)}
                   </div>
                 ))}
               </div>
@@ -1542,7 +1608,7 @@ export default function Home() {
         <div className="inspector-top"><div><span>案件の設定</span><strong>案件情報</strong></div><button className="icon-button" aria-label="閉じる" onClick={() => setWorkspacePanel(null)}><X size={18} /></button></div>
         <div className="workspace-intro"><p>案件情報</p><h2>案件の名前と期間を設定する。</h2><span>ここで変更した内容は、この案件を見ている人に反映されます。</span></div>
         <div className="project-editor-fields"><label>プロジェクト名<input value={project.title} onChange={(event) => updateProjectInfo({ title: event.target.value || "名称未設定" })} /></label><label>クライアント / 部署<input value={project.client} onChange={(event) => updateProjectInfo({ client: event.target.value || "クライアント未設定" })} /></label><label>登録月<input type="month" value={registrationMonth} disabled /></label><label>開催月<input type="month" min={registrationMonth} value={project.eventMonth ?? timelineEndMonth} onChange={(event) => updateProjectInfo({ eventMonth: event.target.value })} /></label><label>タスクの日付表記<select aria-label="タスクの日付表記" disabled={readOnly} value={project.taskDateFormat} onChange={(event) => updateProjectInfo({ taskDateFormat: event.target.value as TaskDateFormat })}>{taskDateFormatOptions.map((option) => <option key={option.value} value={option.value}>{option.label}</option>)}</select></label></div>
-        <div className="project-settings-shortcuts"><button onClick={() => setWorkspacePanel("members")}><Users size={15} /><span>タスク担当者</span><small>{members.length}人</small></button><button onClick={() => setWorkspacePanel("phases")}><Settings2 size={15} /><span>フェーズ</span><small>{phases.length}件</small></button><button onClick={() => { setShareCopied(false); setWorkspacePanel("share"); }}><Share2 size={15} /><span>共有と招待</span><small>編集者・進行メンバー</small></button>{projectId && isAuthenticated && <button onClick={() => setWorkspacePanel("activity")}><RotateCcw size={15} /><span>変更ログ</span><small>履歴を確認</small></button>}</div>
+        <div className="project-settings-shortcuts"><button onClick={() => setWorkspacePanel("members")}><Users size={15} /><span>タスク担当者</span><small>{members.length}人</small></button><button onClick={() => setWorkspacePanel("phases")}><Settings2 size={15} /><span>フェーズ</span><small>{phases.length}件</small></button><button onClick={() => { setShareCopied(false); setWorkspacePanel("share"); }}><Share2 size={15} /><span>共有と招待</span><small>編集者・進捗担当</small></button>{projectId && isAuthenticated && <button onClick={() => setWorkspacePanel("activity")}><RotateCcw size={15} /><span>変更ログ</span><small>履歴を確認</small></button>}</div>
         <div className="milestone-editor"><div className="milestone-editor-heading"><span>重要な日</span><button className="utility-button" onClick={addMilestone}><Plus size={14} />重要な日を追加</button></div><p>クライアント確認、撮影日、公開日など、必ず知らせたい日を登録します。</p>{milestones.map((milestone) => <div key={milestone.id} className="milestone-editor-row"><input aria-label="重要な日の名称" value={milestone.title} onChange={(event) => updateMilestone(milestone.id, { title: event.target.value })} /><input aria-label="重要な日の日付" type="date" value={milestone.date} onChange={(event) => updateMilestone(milestone.id, { date: event.target.value })} /><button className="member-delete" title="重要な日を削除" onClick={() => deleteMilestone(milestone.id)}><X size={15} /></button></div>)}</div>
         <div className="workspace-note"><Check size={15} /><span>ログイン中の案件は、権限を持つ参加者へ更新が共有されます。外部共有リンクをすでに送付した場合は、更新後に新しいリンクを発行してください。</span></div>
       </aside>}
@@ -1553,7 +1619,7 @@ export default function Home() {
         <div className="share-scope-card"><div><Eye size={17} /><div><b>共有されるもの</b><span>工程、日程、担当者、ステータス、フェーズ、進行メモ</span></div></div><div><X size={17} /><div><b>共有されないもの</b><span>他プロジェクト、編集画面、メンバー設定、端末内の保存データ</span></div></div></div>
         <button className="signal-button workspace-add" disabled={createProjectShare.isPending || readOnly} onClick={createShareLink}><Share2 size={16} />{createProjectShare.isPending ? "発行中" : shareCopied ? "リンクをコピーしました" : "7日間の閲覧リンクを発行"}</button>
         {!readOnly && projectSharesQuery.data?.length ? <section className="invite-member-section"><div className="milestone-editor-heading"><span>共有リンク</span><Eye size={15} /></div>{projectSharesQuery.data.map((share) => <div className="invite-member-list" key={share.id}><div><span><b>{share.revokedAt ? "取り消し済み" : new Date(share.expiresAt).getTime() < Date.now() ? "期限切れ" : "有効"}</b><small>期限 {new Date(share.expiresAt).toLocaleString("ja-JP")} ・閲覧 {share.accessCount} 回</small></span>{!share.revokedAt && new Date(share.expiresAt).getTime() >= Date.now() && <button type="button" onClick={async () => { try { await revokeProjectShare.mutateAsync({ publicId: projectId!, shareId: share.id }); await projectSharesQuery.refetch(); toast.success("共有リンクを取り消しました。"); } catch { toast.error("共有リンクを取り消せませんでした。"); } }}>取り消す</button>}</div></div>)}</section> : null}
-        {!readOnly && projectId && isAuthenticated && remoteProjectQuery.data?.accessRole !== "viewer" && <section className="invite-member-section"><div className="milestone-editor-heading"><span>MEMBER INVITATION</span><Mail size={15} /></div><h3>編集者・進行メンバーを招待</h3><p>メールアドレスと役割を選ぶと、招待リンクをコピーし、メール作成画面を開きます。どちらも招待されたアドレスでログインして参加します。編集者はこの案件をすべて編集でき、進行メンバーはタスクの「状態」と「担当者」だけを変更できます。見せるだけならログイン不要の共有リンクを使ってください。</p><form onSubmit={async (event) => { event.preventDefault(); try { const result = await inviteProjectMember.mutateAsync({ publicId: projectId, email: inviteEmail, role: inviteRole, origin: window.location.origin }); let copied = true; try { await navigator.clipboard.writeText(result.inviteUrl); } catch { copied = false; } const subject = encodeURIComponent(`${project.title} への${inviteRole === "editor" ? "編集者" : "進行メンバー"}招待`); const body = encodeURIComponent(`${project.title} に招待されています。\n\n${result.inviteUrl}\n\nログイン用の初期パスワード: ${result.tempPassword}\n(ログイン後、必要であればパスワードを変更してください)`); window.location.href = `mailto:${inviteEmail}?subject=${subject}&body=${body}`; setInviteEmail(""); toast.success(copied ? "招待リンクをコピーしました。メールを送信してください。" : "メール作成画面を開きました。招待リンクを本文から送信してください。"); await projectMembersQuery.refetch(); } catch { toast.error("招待を作成できませんでした。メールアドレスと権限を確認してください。"); } }}><input type="email" required value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="name@example.com" aria-label="招待するメールアドレス" /><select value={inviteRole} onChange={(event) => setInviteRole(event.target.value as "editor" | "viewer")} aria-label="招待する役割"><option value="editor">編集者</option><option value="viewer">進行メンバー(状態・担当のみ)</option></select><button className="outline-button" type="submit" disabled={inviteProjectMember.isPending}>{inviteProjectMember.isPending ? "準備中" : "招待リンクを作成"}</button></form>{projectMembersQuery.data?.members.length ? <div className="invite-member-list">{projectMembersQuery.data.members.map((member) => <div key={member.id}><span><b>{member.invitedEmail}</b><small>{member.role === "editor" ? "編集者" : "進行メンバー"} · {member.status === "active" ? "参加済み" : member.status === "pending" ? "招待中" : "取り消し済み"}</small></span>{member.status !== "revoked" && <button type="button" onClick={async () => { try { await revokeProjectMember.mutateAsync({ publicId: projectId, memberId: member.id }); await projectMembersQuery.refetch(); toast.success("招待を取り消しました。"); } catch { toast.error("招待を取り消せませんでした。"); } }}>取り消す</button>}</div>)}</div> : <small className="invite-empty">まだ招待したメンバーはいません。</small>}</section>}
+        {!readOnly && projectId && isAuthenticated && remoteProjectQuery.data?.accessRole !== "viewer" && <section className="invite-member-section"><div className="milestone-editor-heading"><span>MEMBER INVITATION</span><Mail size={15} /></div><h3>編集者・進捗担当を招待</h3><p>メールアドレスと役割を選ぶと、招待リンクをコピーし、メール作成画面を開きます。どちらも招待されたアドレスでログインして参加します。編集者はこの案件をすべて編集でき、進捗担当はタスクの「ステータス」と「担当者」だけを変更できます。見せるだけならログイン不要の共有リンクを使ってください。</p><form onSubmit={async (event) => { event.preventDefault(); try { const result = await inviteProjectMember.mutateAsync({ publicId: projectId, email: inviteEmail, role: inviteRole, origin: window.location.origin }); let copied = true; try { await navigator.clipboard.writeText(result.inviteUrl); } catch { copied = false; } const subject = encodeURIComponent(`${project.title} への${inviteRole === "editor" ? "編集者" : "進捗担当"}招待`); const body = encodeURIComponent(`${project.title} に招待されています。\n\n${result.inviteUrl}\n\nログイン用の初期パスワード: ${result.tempPassword}\n(ログイン後、必要であればパスワードを変更してください)`); window.location.href = `mailto:${inviteEmail}?subject=${subject}&body=${body}`; setInviteEmail(""); toast.success(copied ? "招待リンクをコピーしました。メールを送信してください。" : "メール作成画面を開きました。招待リンクを本文から送信してください。"); await projectMembersQuery.refetch(); } catch { toast.error("招待を作成できませんでした。メールアドレスと権限を確認してください。"); } }}><input type="email" required value={inviteEmail} onChange={(event) => setInviteEmail(event.target.value)} placeholder="name@example.com" aria-label="招待するメールアドレス" /><select value={inviteRole} onChange={(event) => setInviteRole(event.target.value as "editor" | "viewer")} aria-label="招待する役割"><option value="editor">編集者</option><option value="viewer">進捗担当(ステータス・担当のみ)</option></select><button className="outline-button" type="submit" disabled={inviteProjectMember.isPending}>{inviteProjectMember.isPending ? "準備中" : "招待リンクを作成"}</button></form>{projectMembersQuery.data?.members.length ? <div className="invite-member-list">{projectMembersQuery.data.members.map((member) => <div key={member.id}><span><b>{member.invitedEmail}</b><small>{member.status === "active" ? "参加済み" : member.status === "pending" ? "招待中" : "取り消し済み"}</small></span>{member.status !== "revoked" ? <select aria-label={`${member.invitedEmail}の権限`} value={member.role} disabled={updateProjectMemberRole.isPending} onChange={async (event) => { const nextRole = event.target.value as "editor" | "viewer"; if (nextRole === member.role) return; try { await updateProjectMemberRole.mutateAsync({ publicId: projectId, memberId: member.id, role: nextRole }); await projectMembersQuery.refetch(); toast.success("権限を変更しました。"); } catch { toast.error("権限を変更できませんでした。"); } }}><option value="editor">編集者</option><option value="viewer">進捗担当</option></select> : <small>{member.role === "editor" ? "編集者" : "進捗担当"}</small>}{member.status !== "revoked" && <button type="button" onClick={async () => { try { await revokeProjectMember.mutateAsync({ publicId: projectId, memberId: member.id }); await projectMembersQuery.refetch(); toast.success("招待を取り消しました。"); } catch { toast.error("招待を取り消せませんでした。"); } }}>取り消す</button>}</div>)}</div> : <small className="invite-empty">まだ招待したメンバーはいません。</small>}</section>}
         <div className="share-warning"><Eye size={15} /><span>共有リンクはサーバーにハッシュ化して保存され、7日で失効します。必要に応じてここから直ちに取り消せます。URLを知る人は閲覧できるため、機密情報は共有前に進行メモなどから外してください。</span></div>
         <div className="share-steps"><span><b>01</b> リンクをコピー</span><span><b>02</b> 外部スタッフまたはクライアントへ送付</span><span><b>03</b> 閲覧専用で確認</span></div>
       </aside>}
@@ -1574,7 +1640,7 @@ export default function Home() {
         </>}
       </aside>}
 
-      {showShortcuts && <div className="modal-backdrop no-print" onMouseDown={() => setShowShortcuts(false)}><section className="manual-modal" onMouseDown={(event) => event.stopPropagation()}><button className="icon-button close-modal" onClick={() => setShowShortcuts(false)}><X size={18} /></button><p>使い方</p><h2>案件は、ログインした管理者が作る。</h2><span className="manual-lead">ログインして作った案件は保存されます。削除した案件も、30日間はアーカイブから戻せます。</span><div className="manual-grid"><article><b>01</b><h3>案件を作成</h3><span>管理者が案件一覧で「新規案件」を押し、案件名、クライアント名、開催月を入力します。</span></article><article><b>02</b><h3>日程と担当を決める</h3><span>タスク名、担当者、状態は行内で変えられます。開始日と終わる日を入力してください。</span></article><article><b>03</b><h3>変更を戻す</h3><span>日程を動かして間違えた時は、「その他」のUndoで直前の変更を戻せます。</span></article><article><b>04</b><h3>アラートを見る</h3><span>期限が近い、期限を過ぎた、担当がいないタスクを画面上で確認できます。</span></article><article><b>05</b><h3>共有と権限</h3><span>編集者は案件をすべて変えられます。進行メンバーはタスクの状態と担当者だけ変えられます。ログイン不要で見せたい相手には共有リンクを渡します。</span><button onClick={() => { setShowShortcuts(false); setWorkspacePanel("project"); }}>共有と招待を開く <ChevronRight size={14} /></button></article><article><b>06</b><h3>削除から戻す</h3><span>削除した案件は30日間アーカイブに残ります。その間は案件一覧のアーカイブから戻せます。</span></article><article><b>07</b><h3>大切な案件を残す</h3><span>大きな変更の前や納品前には、設定画面からJSONを書き出して保管してください。</span></article></div><div className="manual-footer"><ClipboardCopy size={15} />もっと知りたい時は、案件一覧の「よくある質問」を開いてください。</div></section></div>}
+      {showShortcuts && <div className="modal-backdrop no-print" onMouseDown={() => setShowShortcuts(false)}><section className="manual-modal" onMouseDown={(event) => event.stopPropagation()}><button className="icon-button close-modal" onClick={() => setShowShortcuts(false)}><X size={18} /></button><p>使い方</p><h2>案件は、ログインした管理者が作る。</h2><span className="manual-lead">ログインして作った案件は保存されます。削除した案件も、30日間はアーカイブから戻せます。</span><div className="manual-grid"><article><b>01</b><h3>案件を作成</h3><span>管理者が案件一覧で「新規案件」を押し、案件名、クライアント名、開催月を入力します。</span></article><article><b>02</b><h3>日程と担当を決める</h3><span>タスク名、担当者、状態は行内で変えられます。開始日と終わる日を入力してください。</span></article><article><b>03</b><h3>変更を戻す</h3><span>日程を動かして間違えた時は、「その他」のUndoで直前の変更を戻せます。</span></article><article><b>04</b><h3>アラートを見る</h3><span>期限が近い、期限を過ぎた、担当がいないタスクを画面上で確認できます。</span></article><article><b>05</b><h3>共有と権限</h3><span>編集者はタスクの追加・削除・日程変更・メンバーの招待まですべてできます。進捗担当はタスクの「ステータス」と「担当者」の変更だけができ、追加・削除・日程変更・メンバーの招待はできません。ログイン不要で見せたい相手には共有リンクを渡します。</span><button onClick={() => { setShowShortcuts(false); setWorkspacePanel("project"); }}>共有と招待を開く <ChevronRight size={14} /></button></article><article><b>06</b><h3>削除から戻す</h3><span>削除した案件は30日間アーカイブに残ります。その間は案件一覧のアーカイブから戻せます。</span></article><article><b>07</b><h3>大切な案件を残す</h3><span>大きな変更の前や納品前には、設定画面からJSONを書き出して保管してください。</span></article></div><div className="manual-footer"><ClipboardCopy size={15} />もっと知りたい時は、案件一覧の「よくある質問」を開いてください。</div></section></div>}
     </div>
   );
 }

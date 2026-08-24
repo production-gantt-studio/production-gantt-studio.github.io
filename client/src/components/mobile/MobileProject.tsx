@@ -53,7 +53,7 @@ type MobileProjectProps = {
   assignees: string[];
   today: string;
   readOnly: boolean;
-  /** 進行メンバーにも開放する2項目(タスクの状態・担当者)を触れるか。 */
+  /** 進捗担当にも開放する2項目(タスクの状態・担当者)を触れるか。 */
   canEditTaskProgress: boolean;
   /** 共有リンク・招待リンクで見ているだけか(案件一覧へ戻る導線を持たない)。 */
   linkOnlyView: boolean;
@@ -201,7 +201,7 @@ export default function MobileProject({
       {!linkOnlyView && readOnly && (
         <p className="pgm-shared-banner">
           <Eye size={14} />
-          進行メンバーとして参加しています。各タスクの「状態」と「担当者」を変更できます。
+          進捗担当として参加しています。各タスクの「ステータス」と「担当者」を変更できます。
         </p>
       )}
 

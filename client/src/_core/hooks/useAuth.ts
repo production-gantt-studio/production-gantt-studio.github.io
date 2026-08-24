@@ -1,6 +1,7 @@
 import { startLogin } from "@/const";
 import { trpc } from "@/lib/trpc";
 import { requireSupabaseClient } from "@/lib/supabaseClient";
+import { useQueryClient } from "@tanstack/react-query";
 import { useCallback, useEffect, useMemo } from "react";
 
 type UseAuthOptions = {
@@ -17,6 +18,7 @@ export function useAuth(options?: UseAuthOptions) {
   // there is no nonce-desync risk like the old cookie-based flow had.
   const { redirectOnUnauthenticated = false, redirectPath } = options ?? {};
   const utils = trpc.useUtils();
+  const queryClient = useQueryClient();
 
   const meQuery = trpc.auth.me.useQuery(undefined, {
     retry: false,
@@ -33,10 +35,20 @@ export function useAuth(options?: UseAuthOptions) {
     try {
       await logoutMutation.mutateAsync(undefined);
     } finally {
+      // Every per-user query this app caches (projects.list,
+      // projects.listArchived, projects.get, members/activity/shares, …) is
+      // keyed independently of "who is signed in" — react-query keeps
+      // serving its last-known data for a disabled/unmounted query, it does
+      // NOT clear it just because `enabled` flips to false. Without this,
+      // the previous user's project list stayed on screen after logout
+      // (Riku 2026-08-24 report). Clearing the whole cache here — not just
+      // auth.me — is the general fix: it wipes every other cached screen's
+      // data too, not only the project list.
+      queryClient.clear();
       utils.auth.me.setData(undefined, null);
       await utils.auth.me.invalidate();
     }
-  }, [logoutMutation, utils]);
+  }, [logoutMutation, queryClient, utils]);
 
   // Keep "me" in sync with Supabase's own auth state (sign-in via magic
   // link/PKCE callback, sign-out, silent token refresh) — react-query has no

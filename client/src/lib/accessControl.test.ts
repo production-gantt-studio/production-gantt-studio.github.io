@@ -18,11 +18,11 @@ describe("getProjectAccessPresentation", () => {
     expect(getProjectAccessPresentation({ accountRole: "user", projectAccessRole: "editor", sharedView: false, invitePreview: false })).toMatchObject({ roleLabel: "編集者", canEditInline: true, canEditTaskProgress: true, showDetailSettings: true, progressOnly: false });
   });
 
-  it("進行メンバーは状態と担当者だけ変更でき、それ以外の編集はできない", () => {
+  it("進捗担当は状態と担当者だけ変更でき、それ以外の編集はできない", () => {
     const presentation = getProjectAccessPresentation({ accountRole: "user", projectAccessRole: "viewer", sharedView: false, invitePreview: false });
     expect(presentation).toMatchObject({
-      roleLabel: "進行メンバー",
-      roleDescription: "タスクの状態と担当者を変更できます",
+      roleLabel: "進捗担当",
+      roleDescription: "タスクのステータスと担当者を変更できます",
       progressOnly: true,
       linkOnlyView: false,
       readOnly: true,
@@ -35,7 +35,7 @@ describe("getProjectAccessPresentation", () => {
   it("共有リンク・招待プレビューは状態も担当者も変更できない", () => {
     expect(getProjectAccessPresentation({ accountRole: "user", projectAccessRole: undefined, sharedView: true, invitePreview: false })).toMatchObject({ roleLabel: "閲覧者", linkOnlyView: true, progressOnly: false, canEditInline: false, canEditTaskProgress: false, showDetailSettings: false });
     expect(getProjectAccessPresentation({ accountRole: "user", projectAccessRole: undefined, sharedView: false, invitePreview: true })).toMatchObject({ roleLabel: "閲覧者", linkOnlyView: true, canEditTaskProgress: false });
-    // 進行メンバーであっても、共有リンク経由で開いている画面では変更させない
+    // 進捗担当であっても、共有リンク経由で開いている画面では変更させない
     expect(getProjectAccessPresentation({ accountRole: "user", projectAccessRole: "viewer", sharedView: true, invitePreview: false })).toMatchObject({ roleLabel: "閲覧者", linkOnlyView: true, progressOnly: false, canEditTaskProgress: false });
     expect(getProjectAccessPresentation({ accountRole: "admin", projectAccessRole: "editor", sharedView: true, invitePreview: false })).toMatchObject({ roleLabel: "閲覧者", canEditInline: false, canEditTaskProgress: false, showDetailSettings: false });
   });

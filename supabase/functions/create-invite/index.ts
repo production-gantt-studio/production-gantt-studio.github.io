@@ -8,7 +8,7 @@
 // 2026-08-24 変更: 招待できる役割を2種類に戻した。
 //
 //   editor = 編集者。今までどおり、この案件の全部を編集できる。
-//   viewer = 進行メンバー。ログインは必要だが、できるのは「タスクの状態」と
+//   viewer = 進捗担当。ログインは必要だが、できるのは「タスクの状態」と
 //            「タスクの担当者」の変更だけ(＋担当引継ぎの記録)。タスクの追加・
 //            削除・日程変更・案件設定・招待・共有リンク発行は一切できない。
 //            実体は update-task-progress Edge Function 側で担保している。
@@ -42,6 +42,7 @@ import {
 } from "../_shared/db.ts";
 import { createOpaqueToken, hashIpAddress, hashOpaqueToken } from "../_shared/tokens.ts";
 import { inviteInput, parseOrThrow } from "../_shared/validation.ts";
+import { isLocalDevOrigin } from "../_shared/cors.ts";
 
 function inviteBaseUrl(rawOrigin: string): string {
   const url = new URL(rawOrigin);
@@ -50,7 +51,10 @@ function inviteBaseUrl(rawOrigin: string): string {
     .split(",")
     .map((value) => value.trim())
     .filter(Boolean);
-  if (!allowed.includes(origin)) throw new AppError(400, "招待リンクの発行元が許可されていません。");
+  // ローカル開発・動作検証時は http://localhost:* も許可する(cors.tsのCORS例外と
+  // 同じ考え方・同じ関数。2026-08-24追加)。本番からこのOriginが届くことは
+  // あり得ないため、本番の許可範囲には影響しない。
+  if (!allowed.includes(origin) && !isLocalDevOrigin(origin)) throw new AppError(400, "招待リンクの発行元が許可されていません。");
   return url.toString().replace(/\/+$/, "") + "/";
 }
 
@@ -63,7 +67,7 @@ Deno.serve((req) =>
     const access = await requireProjectRole(input.publicId, user.id, "editor");
 
     const invitedRole = input.role;
-    const invitedRoleLabel = invitedRole === "editor" ? "編集者" : "進行メンバー";
+    const invitedRoleLabel = invitedRole === "editor" ? "編集者" : "進捗担当";
 
     const supabase = createServiceRoleClient();
     const email = input.email.trim().toLowerCase();

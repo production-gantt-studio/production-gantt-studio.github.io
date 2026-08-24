@@ -13,8 +13,8 @@ function memoryStorage(initial: Record<string, string> = {}) {
 }
 
 describe("mobileTutorialSteps", () => {
-  it("has six steps, each pointing at exactly one real screen element or the centre", () => {
-    expect(mobileTutorialSteps).toHaveLength(6);
+  it("has seven steps, each pointing at exactly one real screen element or the centre", () => {
+    expect(mobileTutorialSteps).toHaveLength(7);
     expect(mobileTutorialSteps.every((step) => step.id && step.title && step.body)).toBe(true);
   });
 
@@ -67,7 +67,7 @@ describe("shouldAutoStartTutorial", () => {
 
 describe("getStepIndex", () => {
   it("finds a step by id and returns -1 for an unknown id", () => {
-    expect(getStepIndex("summary")).toBe(1);
+    expect(getStepIndex("summary")).toBe(2);
     expect(getStepIndex("nope")).toBe(-1);
   });
 });

@@ -54,7 +54,12 @@ export const securityHeaders = helmet({
     directives: {
       defaultSrc: ["'self'"],
       baseUri: ["'self'"],
-      connectSrc: ["'self'"],
+      // Supabase(認証・データ保存)への通信を許可する。本番のGitHub Pages配信
+      // (静的ホスティング)にはこのヘッダー自体が付かないため実害は無かったが、
+      // このExpressサーバーを経由するローカル開発・検証時は 'self' のみだと
+      // Supabaseへの全リクエストがブラウザのCSPでブロックされ、ログインが
+      // 一切機能しない状態になっていた(2026-08-24 発見・修正)。
+      connectSrc: ["'self'", "https://*.supabase.co"],
       fontSrc: ["'self'", "data:", "https://fonts.gstatic.com"],
       formAction: ["'self'"],
       frameAncestors: ["'none'"],

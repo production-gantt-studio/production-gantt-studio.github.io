@@ -19,7 +19,7 @@ type MobileTaskSheetProps = {
   range: TimelineRange;
   today: string;
   readOnly: boolean;
-  /** 進行メンバーにも開放する2項目(タスクの状態・担当者)を触れるか。 */
+  /** 進捗担当にも開放する2項目(タスクの状態・担当者)を触れるか。 */
   canEditTaskProgress: boolean;
   dateFormat: TaskDateFormat;
   phaseName: (phase: Phase) => string;

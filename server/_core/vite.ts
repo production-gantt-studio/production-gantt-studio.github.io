@@ -4,7 +4,7 @@ import { type Server } from "http";
 import { nanoid } from "nanoid";
 import path from "path";
 import { createServer as createViteServer } from "vite";
-import viteConfig from "../../vite.config";
+import viteConfigExport from "../../vite.config";
 
 export async function setupVite(app: Express, server: Server) {
   const serverOptions = {
@@ -13,8 +13,27 @@ export async function setupVite(app: Express, server: Server) {
     allowedHosts: true as const,
   };
 
+  // vite.config.ts exports `defineConfig(() => ({...}))` — a FUNCTION, not a
+  // plain object (this is the documented/recommended form so the CLI can
+  // resolve it against mode/command). Spreading a function directly
+  // (`{...viteConfig}`) silently produces `{}` (functions have no relevant
+  // own-enumerable properties), which drops `root`, `plugins`,
+  // `resolve.alias`, and `envDir` entirely and makes the dev server fall
+  // back to Vite's defaults (root = process.cwd(), i.e. the repo root
+  // instead of client/). The symptom was every asset under client/
+  // (`/src/main.tsx`, files in client/public/) 404-ing inside Vite's own
+  // middleware and silently falling through to this file's SPA-fallback
+  // handler below, which then served the index.html shell for every
+  // request — including JS module requests, which the browser then
+  // rejected for a MIME-type mismatch. Resolve the function to its actual
+  // config object before handing it to createViteServer().
+  const resolvedViteConfig =
+    typeof viteConfigExport === "function"
+      ? await viteConfigExport({ mode: process.env.NODE_ENV ?? "development", command: "serve" })
+      : viteConfigExport;
+
   const vite = await createViteServer({
-    ...viteConfig,
+    ...resolvedViteConfig,
     configFile: false,
     server: serverOptions,
     appType: "custom",

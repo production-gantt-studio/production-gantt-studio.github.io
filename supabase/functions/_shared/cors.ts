@@ -18,9 +18,17 @@ function allowedOrigins(): string[] {
     .filter(Boolean);
 }
 
+// ローカル開発・動作検証専用の例外(2026-08-24追加)。ALLOWED_ORIGINSシークレットは
+// 本番ドメインのみを持つ想定で、それ自体は変更しない。http://localhost:* からの
+// リクエストだけは常に許可する — 本番からこの値のOriginヘッダーが届くことは
+// あり得ないので、本番の許可範囲には一切影響しない。
+export function isLocalDevOrigin(origin: string): boolean {
+  return /^http:\/\/localhost(:\d+)?$/.test(origin) || /^http:\/\/127\.0\.0\.1(:\d+)?$/.test(origin);
+}
+
 export function corsHeaders(requestOrigin: string | null): Record<string, string> {
   const allowed = allowedOrigins();
-  const allowOrigin = requestOrigin && allowed.includes(requestOrigin) ? requestOrigin : "";
+  const allowOrigin = requestOrigin && (allowed.includes(requestOrigin) || isLocalDevOrigin(requestOrigin)) ? requestOrigin : "";
 
   return {
     "Access-Control-Allow-Origin": allowOrigin,

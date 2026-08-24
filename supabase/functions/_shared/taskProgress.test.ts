@@ -1,5 +1,5 @@
 /**
- * 進行メンバー(role = "viewer")に許した編集範囲の境界テスト。
+ * 進捗担当(role = "viewer")に許した編集範囲の境界テスト。
  * ここが通らなくなったら、閲覧しかできないはずの人がタスクを消せる/日程を動かせる
  * 状態になっている可能性がある。
  */
@@ -201,15 +201,15 @@ describe("applyTaskProgressOverlay: 許可していない操作は無視され�
 });
 
 describe("applyTaskProgressOverlay: 保存済みデータを土台にする(巻き戻さない)", () => {
-  it("進行メンバーの手元が古くても、他の人が加えた変更を消さない", () => {
-    // 進行メンバーが画面を開いたときのデータ
+  it("進捗担当の手元が古くても、他の人が加えた変更を消さない", () => {
+    // 進捗担当が画面を開いたときのデータ
     const openedAt = storedProject();
     // その間に編集者がタスクを1件追加し、別タスクの日程を変えた
     const stored = storedProject() as any;
     stored.tasks.push({ id: "t3", phase: "shoot", name: "編集者が追加", start: "2026-09-15", end: "2026-09-16", status: "未着手", assignee: "A", dependencies: [], parentId: null });
     stored.tasks[0].end = "2026-09-05";
 
-    // 進行メンバーは古い手元データのまま、状態だけ変えて保存した
+    // 進捗担当は古い手元データのまま、状態だけ変えて保存した
     const incoming = clone(openedAt) as any;
     incoming.tasks[0].status = "完了";
 
